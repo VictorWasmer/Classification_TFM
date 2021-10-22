@@ -5,7 +5,7 @@ from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
 from definitions import hparams, params_to_track
-import definitions
+import paths
 from aux_functions import train_model, set_parameter_requires_grad, split_dataset
 
 
@@ -14,8 +14,8 @@ num_epochs = hparams['epochs']
 num_classes = 2
 
 # Instantiation of the dataset
-my_dataset = CustomImageDataset(annotations_file=definitions.annotation_path,
-                                img_dir=definitions.img_path,
+my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
+                                img_dir=paths.img_path,
                                 transform=transforms.Compose([
                                     transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                          std=[0.229, 0.224, 0.225])]))
@@ -66,5 +66,5 @@ criterion = nn.CrossEntropyLoss()
 track_params = { key_track: hparams[key_track] for key_track in params_to_track }
 
 # Train model
-#model_ft, hist = train_model(model, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs,
-                             #params_to_track=track_params)
+model_ft, hist = train_model(model, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs,
+                             params_to_track=track_params)

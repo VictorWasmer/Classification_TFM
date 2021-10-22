@@ -5,7 +5,7 @@ import definitions
 import wandb
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, params_to_track = None):
     wandb.init(project="tfm-classification", entity="viiiictorr")
     wandb.config = params_to_track
     since = time.time()
