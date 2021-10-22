@@ -2,9 +2,12 @@ import torch
 import time
 import copy
 import definitions
+import wandb
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, params_to_track=None):
+    wandb.init(project="tfm-classification", entity="viiiictorr")
+    wandb.config = params_to_track
     since = time.time()
 
     val_acc_history = []
@@ -59,7 +62,10 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
             epoch_loss = running_loss / len(dataloaders[phase].dataset)
             epoch_acc = running_corrects.double() / len(dataloaders[phase].dataset)
-
+            wandb.log({"epoch_loss": epoch_loss,
+                       "epoch_accuracy": epoch_acc})
+            # Optional
+            wandb.watch(model)
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
             # deep copy the model
@@ -84,3 +90,10 @@ def set_parameter_requires_grad(model, feature_extracting):
     if feature_extracting:
         for param in model.parameters():
             param.requires_grad = False
+
+
+def split_dataset(dataset, train_portion):
+    train_size = int(train_portion * len(dataset))
+    val_size = len(dataset) - train_size
+    train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
+    return train_set, val_set
