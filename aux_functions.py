@@ -5,7 +5,7 @@ import definitions
 import wandb
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_inception=False, params_to_track=None):
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25):
     wandb.init(project="tfm-classification", entity="viiiictorr")
     wandb.config = params_to_track
     since = time.time()
@@ -31,9 +31,9 @@ def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, is_ince
 
             # Iterate over data.
             for inputs, labels in dataloaders[phase]:
-                inputs = inputs.to(definitions.device)
+                inputs = inputs.to(definitions.hparams['device'])
 
-                labels = labels.to(definitions.device)
+                labels = labels.to(definitions.hparams['device'])
 
                 # zero the parameter gradients
                 optimizer.zero_grad()

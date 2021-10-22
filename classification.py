@@ -62,7 +62,9 @@ optimizer = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
 
 # Setup the loss fxn
 criterion = nn.CrossEntropyLoss()
-track_params = hparams[params_to_track]
+
+track_params = { key_track: hparams[key_track] for key_track in params_to_track }
+
 # Train model
-model_ft, hist = train_model(model, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs,
-                             params_to_track=track_params)
+#model_ft, hist = train_model(model, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs,
+                             #params_to_track=track_params)
