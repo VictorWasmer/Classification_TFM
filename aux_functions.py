@@ -5,7 +5,64 @@ import definitions
 import wandb
 
 
-def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, params_to_track = None):
+def correct_predictions(predicted_batch, label_batch):
+    pred = predicted_batch.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
+    acum = pred.eq(label_batch.view_as(pred)).sum().item()
+    return acum
+
+
+def train_epoch(train_loader, model, optimizer, criterion, hparams):
+    # Activate the train=True flag inside the model
+    best_model_wts = copy.deepcopy(model.state_dict())
+    best_acc = 0.0
+
+    model.train()
+    device = hparams['device']
+    avg_loss = None
+    avg_weight = 0.1
+    acc = 0
+
+    for batch_idx, (data, target) in enumerate(train_loader):
+        data, target = data.to(device), target.to(device)
+        optimizer.zero_grad()
+        output = model(data)
+        loss = criterion(output, target)
+        loss.backward()
+        if avg_loss:
+            avg_loss = avg_weight * loss.item() + (1 - avg_weight) * avg_loss
+            acc += correct_predictions(output, target)
+
+        else:
+            avg_loss = loss.item()
+            acc += correct_predictions(output, target)
+        optimizer.step()
+    train_acc = 100. * acc / len(train_loader.dataset)
+
+    return avg_loss, train_acc
+
+
+def val_epoch(val_loader, model, criterion, hparams):
+    model.eval()
+    device = hparams['device']
+    val_loss = 0
+    acc = 0
+    with torch.no_grad():
+        for data, target in val_loader:
+            data, target = data.to(device), target.to(device)
+            output = model(data)
+            val_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
+            # compute number of correct predictions in the batch
+            acc += correct_predictions(output, target)
+    # Average acc across all correct predictions batches now
+    val_loss /= len(val_loader.dataset)
+    val_acc = 100. * acc / len(val_loader.dataset)
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        val_loss, acc, len(val_loader.dataset), val_acc,
+    ))
+    return val_loss, val_acc
+
+
+def train_model(model, dataloaders, criterion, optimizer, num_epochs=25, params_to_track=None):
     wandb.init(project="tfm-classification", entity="viiiictorr")
     wandb.config = params_to_track
     since = time.time()
