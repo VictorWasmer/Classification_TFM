@@ -51,17 +51,18 @@ for name, param in model.named_parameters():
         params_to_update.append(param)
         print("\t", name)
 
-# Setup the optimizer
-optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
 
-# Setup the loss fxn
-criterion = nn.CrossEntropyLoss()
 
 # track_params = { key_track: hparams[key_track] for key_track in params_to_track }
 
 # Train model
 # model_ft, hist = train_model(model, dataloaders_dict, criterion, optimizer, num_epochs=num_epochs,
 #                             params_to_track=track_params)
+model.to(hparams['device'])
+# Setup the loss fxn
+criterion = nn.CrossEntropyLoss()
+# Setup the optimizer
+optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
 
 for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
