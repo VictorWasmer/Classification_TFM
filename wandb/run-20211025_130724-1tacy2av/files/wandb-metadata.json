@@ -1,0 +1,24 @@
+{
+    "os": "Linux-4.15.0-142-generic-x86_64-with-Ubuntu-18.04-bionic",
+    "python": "3.6.9",
+    "heartbeatAt": "2021-10-25T11:07:25.998981",
+    "startedAt": "2021-10-25T11:07:24.598631",
+    "docker": null,
+    "gpu": "GeForce GTX TITAN X",
+    "gpu_count": 1,
+    "cpu_count": 16,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "classification.py",
+    "codePath": "classification.py",
+    "git": {
+        "remote": "https://github.com/VictorWasmer/Classification_TFM.git",
+        "commit": "a76ef6467301463fafb86054062269938935ccfc"
+    },
+    "email": null,
+    "root": "/mnt/gpid07/imatge/victor.wasmer/TFM/provaRepo/Classification_TFM",
+    "host": "gpic08",
+    "username": "victor.wasmer",
+    "executable": "/home/usuaris/imatge/victor.wasmer/venv/myenv/bin/python"
+}
