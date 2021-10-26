@@ -1,2 +1,2 @@
-annotation_path = 'data\\annotations\\annotations_xwalk_swalk.csv'
-img_path = 'data\\frames'
+annotation_path = "/mnt/gpid07/imatge/victor.wasmer/TFM/data/annotations/annotations_xwalk_swalk.csv"
+img_path = "/mnt/gpid07/imatge/victor.wasmer/TFM/data/frames"
