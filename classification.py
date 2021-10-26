@@ -10,7 +10,7 @@ from aux_functions import train_model, set_parameter_requires_grad, split_datase
 import wandb
 
 track_params = {key_track: hparams[key_track] for key_track in params_to_track}
-wandb.init(project="tfm-classification", entity="viiiictorr", config=track_params)
+wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params)
 
 # Instantiation of the dataset
 my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
