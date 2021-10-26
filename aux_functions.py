@@ -15,15 +15,15 @@ def train_epoch(train_loader, model, optimizer, criterion, hparams):
     # Activate the train=True flag inside the model
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
+    print(hparams)
 
     model.train()
-    device = hparams['device']
     avg_loss = None
     avg_weight = 0.1
     acc = 0
 
     for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(device), target.to(device)
+        data, target = data.to(hparams['device']), target.to(hparams['device'])
         optimizer.zero_grad()
         output = model(data)
         loss = criterion(output, target)
