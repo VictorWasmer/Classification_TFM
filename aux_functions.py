@@ -15,7 +15,6 @@ def train_epoch(train_loader, model, optimizer, criterion, hparams):
     # Activate the train=True flag inside the model
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0
-    print(hparams)
 
     model.train()
     avg_loss = None

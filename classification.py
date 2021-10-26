@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
+import torch.nn.functional as F
 from definitions import hparams, params_to_track
 import paths
 from aux_functions import train_model, set_parameter_requires_grad, split_dataset, train_epoch, val_epoch
@@ -60,7 +61,7 @@ for name, param in model.named_parameters():
 #                             params_to_track=track_params)
 model.to(hparams['device'])
 # Setup the loss fxn
-criterion = nn.CrossEntropyLoss()
+criterion = F.nll_loss
 # Setup the optimizer
 optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
 
