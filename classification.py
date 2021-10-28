@@ -5,6 +5,8 @@ from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
+
+from PseudoLeNet import PseudoLeNet
 from definitions import hparams, params_to_track
 import paths
 from aux_functions import train_model, set_parameter_requires_grad, split_dataset, train_epoch, val_epoch
@@ -29,9 +31,9 @@ val_loader = DataLoader(val_set, batch_size=hparams['batch_size'], shuffle=True)
 # dataloaders_dict = {'train': train_loader,'val': val_loader}
 
 # Instantiate the model and modify the last layer to our specific case
-model = models.mobilenet_v3_small(pretrained=True)
-model.classifier[3] = nn.Linear(in_features=1024, out_features=hparams['num_classes'], bias=True)
-
+#model = models.mobilenet_v3_small(pretrained=True)
+#model.classifier[3] = nn.Linear(in_features=1024, out_features=hparams['num_classes'], bias=True)
+model = PseudoLeNet()
 # Send the model to GPU
 # model = model.to(hparams['device'])
 
@@ -39,11 +41,11 @@ model.classifier[3] = nn.Linear(in_features=1024, out_features=hparams['num_clas
 # Set the transfer learning as feature extractor
 # feature_extract = True
 # Set all req_grad at False
-for param in model.parameters():
-    param.requires_grad = False
+#for param in model.parameters():
+#    param.requires_grad = False
 # set_parameter_requires_grad(model, feature_extract)
 # We only want to train the classifier part
-model.classifier.requires_grad_()
+#model.classifier.requires_grad_()
 params_to_update = []
 print("Params to learn:")
 
@@ -63,8 +65,8 @@ model.to(hparams['device'])
 # Setup the loss fxn
 criterion = F.nll_loss
 # Setup the optimizer
-optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
-
+#optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
+optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
 for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
     wandb.log({"Epoch Train Loss": tr_loss,
