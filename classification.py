@@ -27,8 +27,8 @@ my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
 train_set, val_set = split_dataset(my_dataset, 0.8)
 
 #Create a short subset to make faster tests
-short_trainset = torch.utils.data.Subset(train_set, [1205,1206,1207,1208,1209,1210,1211,1212,1213,1214]) 
-short_valset = torch.utils.data.Subset(val_set, [1204,1203,1202,1201,1200,1215,1216,1217,1218,1219])
+short_trainset = torch.utils.data.Subset(train_set, [5,6,7,8,9,10,11,12,13,14]) 
+short_valset = torch.utils.data.Subset(val_set, [4,3,2,1,0,15,16,17,18,19])
 
 # Dataloader creation
 train_loader = DataLoader(short_trainset, batch_size=hparams['batch_size'], shuffle=True)
