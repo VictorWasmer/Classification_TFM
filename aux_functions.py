@@ -26,6 +26,7 @@ def train_epoch(train_loader, model, optimizer, criterion, hparams):
         optimizer.zero_grad()
         output = model(data)
         loss = criterion(output, target)
+        print(loss)
         loss.backward()
         if avg_loss:
             avg_loss = avg_weight * loss.item() + (1 - avg_weight) * avg_loss
@@ -49,6 +50,7 @@ def val_epoch(val_loader, model, criterion, hparams):
         for data, target in val_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
+            print(val_loss)
             val_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
             # compute number of correct predictions in the batch
             acc += correct_predictions(output, target)

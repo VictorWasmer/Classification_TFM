@@ -17,11 +17,12 @@ track_params = {key_track: hparams[key_track] for key_track in params_to_track}
 wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params)
 
 # Instantiation of the dataset
+transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                                            std=[0.229, 0.224, 0.225])])
+
 my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
                                 img_dir=paths.img_path,
-                                transform=transforms.Compose([
-                                    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                         std=[0.229, 0.224, 0.225])]))
+                                transform=transformations)
 # Split train/val sets
 train_set, val_set = split_dataset(my_dataset, 0.8)
 
