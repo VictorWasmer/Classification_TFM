@@ -130,6 +130,6 @@ dmypy.json
 .pyre/
 
 
-paths.py
-path.py
 wandb
+data
+paths.py
