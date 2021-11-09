@@ -59,8 +59,8 @@ for name, param in model.named_parameters():
 # Setup the loss fxn
 criterion = F.nll_loss
 # Set the optimizer
-#optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
-optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
+optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
+#optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
 
 for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
