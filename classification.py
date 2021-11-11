@@ -10,16 +10,15 @@ import torch.nn.functional as F
 from PseudoLeNet import PseudoLeNet
 from definitions import hparams, params_to_track
 import paths
-from aux_functions import train_model, set_parameter_requires_grad, split_dataset, train_epoch, val_epoch
+from aux_functions import split_dataset, train_epoch, val_epoch
 import wandb
 
 track_params = {key_track: hparams[key_track] for key_track in params_to_track}
 wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params)
 
-# Instantiation of the dataset
 transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                             std=[0.229, 0.224, 0.225])])
-
+# Instantiation of the dataset
 my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
                                 img_dir=paths.img_path,
                                 transform=transformations)
@@ -27,8 +26,8 @@ my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
 train_set, val_set = split_dataset(my_dataset, 0.8)
 
 #Create a short subset to make faster tests
-short_trainset = torch.utils.data.Subset(train_set, [5,6,7,8,9,10,11,12,13,14]) 
-short_valset = torch.utils.data.Subset(val_set, [4,3,2,1,0,15,16,17,18,19])
+short_trainset = torch.utils.data.Subset(train_set, [0,1,2,3,4,5,6,7,8,9]) 
+short_valset = torch.utils.data.Subset(val_set, [10,11,12,13,14,15,16,17,18,19])
 
 # Dataloader creation
 train_loader = DataLoader(short_trainset, batch_size=hparams['batch_size'], shuffle=True)
@@ -40,8 +39,6 @@ model.classifier[3] = nn.Linear(in_features=1024, out_features=hparams['num_clas
 # Send the model to GPU
 model.to(hparams['device'])
 
-# Set the transfer learning as feature extractor
-# feature_extract = True
 # Set all req_grad at False
 for param in model.parameters():
     param.requires_grad = False
