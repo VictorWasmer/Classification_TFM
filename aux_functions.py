@@ -22,7 +22,7 @@ def train_epoch(train_loader, model, optimizer, criterion, hparams):
     acc = 0
 
     for batch_idx, (data, target) in enumerate(train_loader):
-        data, target = data.to(hparams['device']), target.to(hparams['device'])
+        data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
         optimizer.zero_grad()
         output = model(data)
         target = target.unsqueeze(-1)
@@ -49,7 +49,7 @@ def val_epoch(val_loader, model, criterion, hparams):
     acc = 0
     with torch.no_grad():
         for data, target in val_loader:
-            data, target = data.to(device), target.to(device)
+            data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
             output = model(data)
             target = target.unsqueeze(-1)
             print(val_loss)
