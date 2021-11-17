@@ -115,3 +115,17 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         wandb.log({"Epoch Validation Loss": val_loss.avg, "Epoch Validation Accuracy": val_accuracy.avg})
 
     return train_accuracies, train_losses, val_accuracies, val_losses
+
+    
+def set_parameter_requires_grad(model, feature_extracting):
+    if feature_extracting:
+        for param in model.parameters():
+            param.requires_grad = False
+
+
+def split_dataset(dataset, train_portion):
+    train_size = int(train_portion * len(dataset))
+    val_size = len(dataset) - train_size
+    train_set, val_set = torch.utils.data.random_split(dataset, [train_size, val_size])
+    return train_set, val_set
+
