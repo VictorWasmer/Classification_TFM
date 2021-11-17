@@ -51,6 +51,7 @@ def val_epoch(val_loader, model, criterion, hparams):
         for data, target in val_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
+            target = target.unsqueeze(-1)
             print(val_loss)
             val_loss += criterion(output, target, reduction='sum').item()  # sum up batch loss
             # compute number of correct predictions in the batch
