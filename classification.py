@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import time
 from definitions import hparams, params_to_track
 import paths
-from aux_functions import split_dataset, train_epoch, val_epoch
+from aux_functions import split_dataset, train_epoch, train_model, val_epoch
 import wandb
 
 track_params = {key_track: hparams[key_track] for key_track in params_to_track}
@@ -64,13 +64,15 @@ optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
 
 wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
 
-for epoch in range(1, hparams['num_epochs'] + 1):
+train_accuracies, train_losses, val_accuracies, val_losses = train_model(model, optimizer, criterion, train_loader, val_loader, wandb)
+
+""" for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
     wandb.log({"Epoch Train Loss": tr_loss,
                "Epoch Train Accuracy": tr_acc})
     val_loss, val_acc = val_epoch(val_loader, model, criterion, hparams)
     wandb.log({"Epoch Val Loss": tr_loss,
-               "Epoch Val Accuracy": tr_acc})
+               "Epoch Val Accuracy": tr_acc}) """
 
 model_date = time.strftime("%Y%m%d-%H%M%S")
 filename = "model_%s.pt" % model_date
