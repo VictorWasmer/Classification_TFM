@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import optim
 from Custom_Dataset import CustomImageDataset
@@ -6,8 +7,7 @@ from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
-
-from PseudoLeNet import PseudoLeNet
+import time
 from definitions import hparams, params_to_track
 import paths
 from aux_functions import split_dataset, train_epoch, val_epoch
@@ -35,7 +35,10 @@ val_loader = DataLoader(short_valset, batch_size=hparams['batch_size'], shuffle=
 
 # Instantiate the model and modify the last layer to our specific case
 model = models.mobilenet_v3_small(pretrained=True)
-model.classifier[3] = nn.Linear(in_features=1024, out_features=hparams['num_classes'], bias=True)
+model.classifier[3] = nn.Sequential(
+                        nn.Linear(in_features=1024, out_features=hparams['num_classes'], bias=True),
+                        nn.Sigmoid())
+
 # Send the model to GPU
 model.to(hparams['device'])
 
@@ -55,10 +58,11 @@ for name, param in model.named_parameters():
         print("\t", name)
 
 # Setup the loss fxn
-criterion = F.nll_loss
+criterion = nn.BCELoss()
 # Set the optimizer
-optimizer = optim.SGD(params_to_update, lr=hparams['learning_rate'], momentum=hparams['momentum'])
-#optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
+optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
+
+wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
 
 for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
@@ -67,4 +71,8 @@ for epoch in range(1, hparams['num_epochs'] + 1):
     val_loss, val_acc = val_epoch(val_loader, model, criterion, hparams)
     wandb.log({"Epoch Val Loss": tr_loss,
                "Epoch Val Accuracy": tr_acc})
+
+model_date = time.strftime("%Y%m%d-%H%M%S")
+filename = "model_%s.pt" % model_date
+torch.save(model.state_dict(), os.path.join("models", filename))
 
