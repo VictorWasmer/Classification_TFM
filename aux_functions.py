@@ -33,7 +33,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
         wandb.log({"Epoch Train Loss": train_loss.avg,
-                  "Epoch Train Accuracy": train_accuracy.avg})
+                  "Epoch Train Accuracy": train_accuracy.avg}, commit = True)
 
         # validation
         model.eval()
@@ -54,7 +54,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
         wandb.log({"Epoch Validation Loss": val_loss.avg,
-                  "Epoch Validation Accuracy": val_accuracy.avg})
+                  "Epoch Validation Accuracy": val_accuracy.avg}, commit  = True)
 
     return train_accuracies, train_losses, val_accuracies, val_losses
 
