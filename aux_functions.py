@@ -25,6 +25,7 @@ def train_epoch(train_loader, model, optimizer, criterion, hparams):
         data, target = data.to(hparams['device']), target.to(hparams['device'])
         optimizer.zero_grad()
         output = model(data)
+        target = target.unsqueeze(-1)
         loss = criterion(output, target)
         print(loss)
         loss.backward()
