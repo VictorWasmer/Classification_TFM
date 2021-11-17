@@ -64,7 +64,7 @@ optimizer = optim.Adam(params_to_update, lr=hparams['learning_rate'])
 
 wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
 
-train_accuracies, train_losses, val_accuracies, val_losses = train_model(model, optimizer, criterion, train_loader, val_loader, wandb)
+train_accuracies, train_losses, val_accuracies, val_losses = train_model(model, optimizer, criterion, train_loader, val_loader, hparams,wandb)
 
 """ for epoch in range(1, hparams['num_epochs'] + 1):
     tr_loss, tr_acc = train_epoch(train_loader, model, optimizer, criterion, hparams)
