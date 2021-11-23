@@ -19,11 +19,14 @@ wandb.init(project="Classification_TFM",
 transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                            std=[0.229, 0.224, 0.225])])
 # Instantiation of the dataset
-my_dataset = CustomImageDataset(annotations_file=paths.annotation_path,
-                                img_dir=paths.img_path,
+train_set = CustomImageDataset(annotations_file=paths.train_annotation_path,
+                                img_dir=paths.train_img_path,
+                                transform=transformations)
+validation_set = CustomImageDataset(annotations_file=paths.validation_annotation_path,
+                                img_dir=paths.validation_img_path,
                                 transform=transformations)
 # Split train/val sets
-train_set, val_set = split_dataset(my_dataset, 0.8)
+#train_set, val_set = split_dataset(my_dataset, 0.8) #Split already done in folders
 
 # Create a short subset to make faster tests
 #short_trainset = torch.utils.data.Subset(train_set, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
@@ -33,7 +36,7 @@ train_set, val_set = split_dataset(my_dataset, 0.8)
 train_loader = DataLoader(
     train_set, batch_size=hparams['batch_size'], shuffle=True)
 val_loader = DataLoader(
-    val_set, batch_size=hparams['batch_size'], shuffle=True)
+    validation_set, batch_size=hparams['batch_size'], shuffle=True)
 
 # Instantiate the model and modify the last layer to our specific case
 model = models.mobilenet_v3_small(pretrained=True)

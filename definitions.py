@@ -4,7 +4,7 @@ hparams = {
     "learning_rate": 0.01,
     "momentum": 0.9,
     "num_epochs": 20,
-    "batch_size": 16,
+    "batch_size": 32,
     "device": 'cuda' if torch.cuda.is_available() else 'cpu',
     "num_classes": 1 #Actually two classes but 1 unit enough to binary classification
 }
