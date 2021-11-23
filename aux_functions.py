@@ -66,11 +66,11 @@ def split_dataset(dataset, train_portion):
         dataset, [train_size, val_size])
     return train_set, val_set
 
-def collate_fn(data):
-    print(data)
-    img, label = data
-    zipped = zip(img, label)
-    return list(zipped)
+def collate_fn(batch):
+    data = [item[0] for item in batch]
+    target = [item[1] for item in batch]
+    target = torch.LongTensor(target)
+    return [data, target]
 
 #!From here to the end is deprecated code
 
