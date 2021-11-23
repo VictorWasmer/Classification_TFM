@@ -9,7 +9,7 @@ import torch.nn as nn
 import time
 from definitions import hparams, params_to_track
 import paths
-from aux_functions import split_dataset, train_model
+from aux_functions import split_dataset, train_model, collate_fn
 import wandb
 
 track_params = {key_track: hparams[key_track] for key_track in params_to_track}
@@ -34,9 +34,9 @@ validation_set = CustomImageDataset(annotations_file=paths.validation_annotation
 
 # Dataloader creation
 train_loader = DataLoader(
-    train_set, batch_size=hparams['batch_size'], shuffle=True)
+    train_set, batch_size=hparams['batch_size'], shuffle=True, collate_fn = collate_fn)
 val_loader = DataLoader(
-    validation_set, batch_size=hparams['batch_size'], shuffle=True)
+    validation_set, batch_size=hparams['batch_size'], shuffle=True, collate_fn = collate_fn)
 
 # Instantiate the model and modify the last layer to our specific case
 model = models.mobilenet_v3_small(pretrained=True)

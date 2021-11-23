@@ -66,6 +66,11 @@ def split_dataset(dataset, train_portion):
         dataset, [train_size, val_size])
     return train_set, val_set
 
+def collate_fn(data):
+    img, label = data
+    zipped = zip(img, label)
+    return list(zipped)
+
 #!From here to the end is deprecated code
 
 
