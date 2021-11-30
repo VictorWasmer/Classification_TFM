@@ -6,7 +6,7 @@ hparams = {
     "num_epochs": 20,
     "batch_size": 32,
     "device": 'cuda' if torch.cuda.is_available() else 'cpu',
-    "num_classes": 1 #Actually two classes but 1 unit enough to binary classification
+    "model_outputs": 1 #Binary classification
 }
 
 params_to_track = ['learning_rate', 'num_epochs', 'batch_size']

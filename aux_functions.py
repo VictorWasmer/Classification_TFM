@@ -1,24 +1,27 @@
+import os
+import time
 import torch
 import copy
 from AverageMeter import AverageMeter
+import shutil
 
-
-def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wandb):
+def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wandb, args, best_accuracy = None):
 
     train_accuracies, train_losses, val_accuracies, val_losses = [], [], [], []
     val_loss = AverageMeter()
     val_accuracy = AverageMeter()
     train_loss = AverageMeter()
     train_accuracy = AverageMeter()
+    best_acc1 = best_accuracy
 
-    for epoch in range(hparams['num_epochs']):
+    for epoch in range(args.start_epoch, args.epochs):
+        adjust_learning_rate(optimizer, epoch, args)
         # train
         model.train()
         train_loss.reset()
         train_accuracy.reset()
         for data, target in train_loader:
-            data, target = data[0].float().to(
-                hparams['device']), target.float().to(hparams['device'])
+            data, target = data[0].float().to(hparams['device']), target.float().to(hparams['device'])
             target = target.unsqueeze(-1)
             optimizer.zero_grad()
             output = model(data)
@@ -39,8 +42,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_accuracy.reset()
         with torch.no_grad():
             for data, target in val_loader:
-                data, target = data[0].float().to(
-                    hparams['device']), target.float().to(hparams['device'])
+                data, target = data[0].float().to(hparams['device']), target.float().to(hparams['device'])
                 target = target.unsqueeze(-1)
                 output = model(data)
                 loss = loss_fn(output, target)
@@ -49,13 +51,24 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
 
+        is_best = val_accuracy.val > best_acc1
+        best_acc1 = max(val_accuracy.val, best_acc1)
+            
+        save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': model.state_dict(),
+                'best_acc1': best_acc1,
+                'optimizer' : optimizer.state_dict(),
+            }, is_best)
+        
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
+
         wandb.log({"Epoch Validation Loss": val_loss.avg,
                   "Epoch Validation Accuracy": val_accuracy.avg, 
                   "Epoch Train Loss": train_loss.avg,
-                  "Epoch Train Accuracy": train_accuracy.avg})
-
+                  "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
+        wandb.save('checkpoint.pth.tar')
     return train_accuracies, train_losses, val_accuracies, val_losses
 
 
@@ -71,6 +84,17 @@ def collate_fn(batch):
     target = [item[1] for item in batch]
     target = torch.LongTensor(target)
     return [data, target]
+
+def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
+    torch.save(state, filename)
+    if is_best:
+        shutil.copyfile(filename, 'model_best.pth.tar')
+
+def adjust_learning_rate(optimizer, epoch, args):
+    """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
+    lr = args.lr * (0.1 ** (epoch // 30))
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
 
 #!From here to the end is deprecated code
 

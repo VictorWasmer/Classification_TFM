@@ -38,5 +38,5 @@ with torch.no_grad():
             hparams['device']), target.float().to(hparams['device'])
         target = target.unsqueeze(-1)
         output = model(data)
-        print(output)
-        print(target)
+        print('Predictions: {}' .format(round(output)))
+        print('Labels: {}' .format(target))
