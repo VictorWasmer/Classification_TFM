@@ -24,7 +24,7 @@ parser.add_argument('-b', '--batch-size', default=hparams['batch_size'], type=in
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
                          'using Data Parallel or Distributed Data Parallel')
-parser.add_argument('--lr', '--learning-rate', default=hparams['learning_rate'], type=float,
+parser.add_argument('--lr', '--learning_rate', default=hparams['learning_rate'], type=float,
                     metavar='LR', help='initial learning rate', dest='lr')
 parser.add_argument('--momentum', default=hparams['momentum'], type=float, metavar='M',
                     help='momentum')
@@ -50,7 +50,7 @@ def main():
     track_params = {'n_epochs': args.epochs, 
                     'start_epoch': args.start_epoch, 
                     'batch_size': args.batch_size,
-                    'learning_rate': args.learning_rate,
+                    'learning_rate': args.lr,
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
 
