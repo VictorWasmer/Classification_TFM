@@ -115,7 +115,6 @@ def main_worker(args, wandb):
                                     transform=transforms.Compose([
                                     transforms.RandomResizedCrop(224),
                                     transforms.RandomHorizontalFlip(),
-                                    transforms.ToTensor(),
                                     normalize,
                                     ]))
     validation_set = CustomImageDataset(annotations_file=paths.validation_annotation_path,
@@ -123,7 +122,6 @@ def main_worker(args, wandb):
                                     transform=transforms.Compose([
                                     transforms.Resize(256),
                                     transforms.CenterCrop(224),
-                                    transforms.ToTensor(),
                                     normalize,
                                     ]))
     # Split train/val sets
