@@ -21,7 +21,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         train_loss.reset()
         train_accuracy.reset()
         for i, (data, target) in enumerate(train_loader):
-            data, target = data[0].float().to(hparams['device']), target.float().to(hparams['device'])
+            data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
             #target = target.unsqueeze(-1)
             optimizer.zero_grad()
             output = model(data)
