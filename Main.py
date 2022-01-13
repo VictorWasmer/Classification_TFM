@@ -2,7 +2,7 @@ import os
 import argparse
 import torch
 from torch import optim
-from torch._C import int8
+#from torch._C import int8
 from Custom_Dataset import CustomImageDataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -35,7 +35,7 @@ parser.add_argument('--resume', default='', type=str, metavar='PATH',
                     help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
-parser.add_argument('--model-outputs', default=hparams['model_outputs'], type=int8,
+parser.add_argument('--model-outputs', default=hparams['model_outputs'], type=int,
                     metavar='MODEL-OUTS', help='number of outputs of the head classifier')
 
 
