@@ -25,6 +25,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
             #target = target.unsqueeze(-1)
             optimizer.zero_grad()
             output = model(data)
+            target = target.unsqueeze(1)
             loss = loss_fn(output, target)
             loss.backward()
             optimizer.step()
