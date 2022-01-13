@@ -119,9 +119,10 @@ def main_worker(args, wandb):
 
     # Dataloader creation
     train_loader = DataLoader(
-        train_set, batch_size=hparams['batch_size'], shuffle=True, collate_fn = collate_fn)
+        train_set, batch_size=args.b, shuffle=True, collate_fn = collate_fn)
+
     val_loader = DataLoader(
-        validation_set, batch_size=hparams['batch_size'], shuffle=True, collate_fn = collate_fn)
+        validation_set, batch_size=args.b, shuffle=True, collate_fn = collate_fn)
 
     #Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
