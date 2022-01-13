@@ -19,7 +19,7 @@ parser.add_argument('--epochs', default=hparams['num_epochs'], type=int, metavar
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=hparams['batch_size'], type=int,
+parser.add_argument('-b', '--batch_size', default=hparams['batch_size'], type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
@@ -119,10 +119,10 @@ def main_worker(args, wandb):
 
     # Dataloader creation
     train_loader = DataLoader(
-        train_set, batch_size=args.b, shuffle=True, collate_fn = collate_fn)
+        train_set, batch_size=args.batch_size, shuffle=True, collate_fn = collate_fn)
 
     val_loader = DataLoader(
-        validation_set, batch_size=args.b, shuffle=True, collate_fn = collate_fn)
+        validation_set, batch_size=args.batch_size, shuffle=True, collate_fn = collate_fn)
 
     #Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
