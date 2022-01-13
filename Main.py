@@ -105,8 +105,8 @@ def main_worker(args, wandb):
             print("=> no checkpoint found at '{}'".format(args.resume))
 
 
-    transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                            std=[0.229, 0.224, 0.225])])
+    #transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
+    #                                                        std=[0.229, 0.224, 0.225])])
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
     # Instantiation of the dataset
@@ -134,7 +134,7 @@ def main_worker(args, wandb):
     val_loader = DataLoader(
         validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
-    #Add the loss function and the optimizer to de wandb config file
+    # Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
 
     train_accuracies, train_losses, val_accuracies, val_losses = train_model(
