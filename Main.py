@@ -107,22 +107,34 @@ def main_worker(args, wandb):
 
     transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                             std=[0.229, 0.224, 0.225])])
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    std=[0.229, 0.224, 0.225])
     # Instantiation of the dataset
     train_set = CustomImageDataset(annotations_file=paths.train_annotation_path,
                                     img_dir=paths.train_img_path,
-                                    transform=transformations)
+                                    transform=transforms.Compose([
+                                    transforms.RandomResizedCrop(224),
+                                    transforms.RandomHorizontalFlip(),
+                                    transforms.ToTensor(),
+                                    normalize,
+                                    ]))
     validation_set = CustomImageDataset(annotations_file=paths.validation_annotation_path,
                                     img_dir=paths.validation_img_path,
-                                    transform=transformations)
+                                    transform=transforms.Compose([
+                                    transforms.Resize(256),
+                                    transforms.CenterCrop(224),
+                                    transforms.ToTensor(),
+                                    normalize,
+                                    ]))
     # Split train/val sets
     #train_set, val_set = split_dataset(my_dataset, 0.8) #Split already done in folders
 
     # Dataloader creation
     train_loader = DataLoader(
-        train_set, batch_size=args.batch_size, shuffle=True, collate_fn = collate_fn)
+        train_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     val_loader = DataLoader(
-        validation_set, batch_size=args.batch_size, shuffle=True, collate_fn = collate_fn)
+        validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     #Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
