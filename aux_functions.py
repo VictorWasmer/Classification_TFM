@@ -48,16 +48,17 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_accuracy.reset()
         with torch.no_grad():
             for data, target in val_loader:
-                print(f"Start VALIDATION Iteration: {i}")
+                print(f"Start VALIDATION...")
                 data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
                 #target = target.unsqueeze(-1)
                 output = model(data)
+                target = target.unsqueeze(1)
                 loss = loss_fn(output, target)
                 val_loss.update(loss.item(), n=len(target))
                 pred = output.round()  # get the prediction
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
-                print(f"Start VALIDATION Iteration: {i}")
+                print(f"Start VALIDATION...")
 
         is_best = val_accuracy.val > best_acc1
         best_acc1 = max(val_accuracy.val, best_acc1)
