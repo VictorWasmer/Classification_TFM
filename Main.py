@@ -76,14 +76,16 @@ def main_worker(args, wandb):
 
     # Send the model to GPU
     model.to(hparams['device'])
-
+    print("Setting all req_grad of the model to false")
     # Set all req_grad at False
     for param in model.parameters():
         param.requires_grad = False
 
     # We only want to train the classifier part
-    model.classifier.requires_grad_()
+    print("Setting classifier req_grad of the model to true")
 
+    model.classifier.requires_grad_()
+    print("Creating the params to update list")
     params_to_update = []
     for name, param in model.named_parameters():
         if param.requires_grad:
@@ -116,6 +118,7 @@ def main_worker(args, wandb):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
     # Instantiation of the dataset
+    print("Train and val datasets creation")
     train_set = CustomImageDataset(annotations_file=paths.train_annotation_path,
                                     img_dir=paths.train_img_path,
                                     transform=transforms.Compose([
