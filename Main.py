@@ -53,8 +53,9 @@ def main():
                     'learning_rate': args.lr,
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
-
-    wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True)
+                    
+    wandb_id = wandb.util.generate_id()
+    wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
     main_worker(args, wandb)
 
