@@ -33,6 +33,8 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
             pred = output.round()  # get the prediction
             acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
             train_accuracy.update(acc, n=len(target))
+            wandb.log({f"Iteration {i} Train Loss": train_loss,
+            f"Iteration {i} Train Accuracy": train_accuracy})
 
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
