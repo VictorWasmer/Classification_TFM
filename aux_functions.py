@@ -18,11 +18,12 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         print(f"Start epoch {epoch}")
         adjust_learning_rate(optimizer, epoch, args)
         # train
+        print("Setting model in train mode...")
         model.train()
         train_loss.reset()
         train_accuracy.reset()
         for i, (data, target) in enumerate(train_loader):
-            print(f"Start Iteration: {i}")
+            print(f"Start TRAIN Iteration: {i}")
             data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
             #target = target.unsqueeze(-1)
             optimizer.zero_grad()
@@ -35,29 +36,32 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
             pred = output.round()  # get the prediction
             acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
             train_accuracy.update(acc, n=len(target))
-            print(f"End Iteration: {i}")
+            print(f"End TRAIN Iteration: {i}")
 
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
 
+        print("Setting model in eval mode...")
         # validation
         model.eval()
         val_loss.reset()
         val_accuracy.reset()
         with torch.no_grad():
             for data, target in val_loader:
-                data, target = data[0].float().to(hparams['device']), target.float().to(hparams['device'])
-                target = target.unsqueeze(-1)
+                print(f"Start VALIDATION Iteration: {i}")
+                data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
+                #target = target.unsqueeze(-1)
                 output = model(data)
                 loss = loss_fn(output, target)
                 val_loss.update(loss.item(), n=len(target))
                 pred = output.round()  # get the prediction
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
+                print(f"Start VALIDATION Iteration: {i}")
 
         is_best = val_accuracy.val > best_acc1
         best_acc1 = max(val_accuracy.val, best_acc1)
-            
+        print("Saving Checkpoint...")
         save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
@@ -68,11 +72,13 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
 
+        print("Logging metrics to WandB")
         wandb.log({"Epoch Validation Loss": val_loss.avg,
                   "Epoch Validation Accuracy": val_accuracy.avg, 
                   "Epoch Train Loss": train_loss.avg,
                   "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
         wandb.save('checkpoint.pth.tar')
+        print(f"End epoch {epoch}")
     return train_accuracies, train_losses, val_accuracies, val_losses
 
 

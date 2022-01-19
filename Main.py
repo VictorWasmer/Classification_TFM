@@ -42,7 +42,9 @@ parser.add_argument('--model-outputs', default=hparams['model_outputs'], type=in
 best_acc1 = 0
 
 def main():
+    print("-----START-----")
 
+    print("Setting arg parser...")
     args = parser.parse_args()
 
     #track_params = {key_track: hparams[key_track] for key_track in params_to_track}
@@ -53,7 +55,8 @@ def main():
                     'learning_rate': args.lr,
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
-                    
+    
+    print("Initializing WandB")                
     wandb_id = wandb.util.generate_id()
     wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
@@ -63,11 +66,13 @@ def main():
 def main_worker(args, wandb):
     global best_acc1
     
+    print("Instantiating and setting Mobilenetv3")
     # Instantiate the model and modify the last layer to our specific case
     model = models.mobilenet_v3_small(pretrained=True)
     model.classifier[3] = nn.Sequential(
         nn.Linear(in_features=1024, out_features=args.model_outputs, bias=True),
         nn.Sigmoid())
+    print(model)
 
     # Send the model to GPU
     model.to(hparams['device'])
@@ -129,21 +134,27 @@ def main_worker(args, wandb):
     #train_set, val_set = split_dataset(my_dataset, 0.8) #Split already done in folders
 
     # Dataloader creation
+    print("Creating train Dataloader")
     train_loader = DataLoader(
         train_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
-
+    print("Creating validation Dataloader")
     val_loader = DataLoader(
         validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     # Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
-
+    print("Start training...")
     train_accuracies, train_losses, val_accuracies, val_losses = train_model(
         model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
+    print("Training end")
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
     filename = "final_model_%s.pt" % model_date
+
+    print("Saving model...")
     torch.save(model.state_dict(), os.path.join("models", filename))
+    print("Model saved")
+    print("-----END-----")
 
 if __name__ == '__main__':
     main()
