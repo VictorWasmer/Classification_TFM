@@ -15,12 +15,14 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
     best_acc1 = best_accuracy
 
     for epoch in range(args.start_epoch, args.epochs):
+        print(f"Start epoch {epoch}")
         adjust_learning_rate(optimizer, epoch, args)
         # train
         model.train()
         train_loss.reset()
         train_accuracy.reset()
         for i, (data, target) in enumerate(train_loader):
+            print(f"Start Iteration: {i}")
             data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
             #target = target.unsqueeze(-1)
             optimizer.zero_grad()
@@ -33,7 +35,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
             pred = output.round()  # get the prediction
             acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
             train_accuracy.update(acc, n=len(target))
-            print(i)
+            print(f"End Iteration: {i}")
 
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
