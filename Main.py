@@ -72,7 +72,6 @@ def main_worker(args, wandb):
     model.classifier[3] = nn.Sequential(
         nn.Linear(in_features=1024, out_features=args.model_outputs, bias=True),
         nn.Sigmoid())
-    print(model)
 
     # Send the model to GPU
     print("Sending model to hparams['device']")
@@ -88,7 +87,7 @@ def main_worker(args, wandb):
         print("Setting classifier req_grad of the model to true")
 
         model.classifier.requires_grad_()
-        
+
     print("Creating the params to update list")
     params_to_update = []
     for name, param in model.named_parameters():
