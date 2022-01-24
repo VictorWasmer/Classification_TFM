@@ -77,15 +77,18 @@ def main_worker(args, wandb):
     # Send the model to GPU
     print("Sending model to hparams['device']")
     model.to(hparams['device'])
-    print("Setting all req_grad of the model to false")
-    # Set all req_grad at False
-    for param in model.parameters():
-        param.requires_grad = False
+    train_classifier = False
+    if train_classifier:
+        print("Setting all req_grad of the model to false")
+        # Set all req_grad at False
+        for param in model.parameters():
+            param.requires_grad = False
 
-    # We only want to train the classifier part
-    print("Setting classifier req_grad of the model to true")
+        # We only want to train the classifier part
+        print("Setting classifier req_grad of the model to true")
 
-    model.classifier.requires_grad_()
+        model.classifier.requires_grad_()
+        
     print("Creating the params to update list")
     params_to_update = []
     for name, param in model.named_parameters():
