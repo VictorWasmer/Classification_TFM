@@ -42,7 +42,6 @@ parser.add_argument('--model-outputs', default=hparams['model_outputs'], type=in
 best_acc1 = 0
 
 def main():
-    print("-----START-----")
 
     print("Setting arg parser...")
     args = parser.parse_args()
@@ -65,7 +64,8 @@ def main():
 
 def main_worker(args, wandb):
     global best_acc1
-    
+    print("-----START-----")
+
     print("Instantiating and setting Mobilenetv3")
     # Instantiate the model and modify the last layer to our specific case
     model = models.mobilenet_v3_small(pretrained=True)
@@ -75,6 +75,7 @@ def main_worker(args, wandb):
     print(model)
 
     # Send the model to GPU
+    print("Sending model to hparams['device']")
     model.to(hparams['device'])
     print("Setting all req_grad of the model to false")
     # Set all req_grad at False
