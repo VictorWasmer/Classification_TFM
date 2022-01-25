@@ -25,10 +25,10 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         for i, (data, target) in enumerate(train_loader):
             print(f"Start TRAIN Iteration: {i}")
             data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
-            #target = target.unsqueeze(-1)
+            target = target.unsqueeze(-1)
             optimizer.zero_grad()
             output = model(data)
-            target = target.unsqueeze(1)
+            #target = target.unsqueeze(1)
             loss = loss_fn(output, target)
             loss.backward()
             optimizer.step()
@@ -47,18 +47,19 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_loss.reset()
         val_accuracy.reset()
         with torch.no_grad():
-            print(f"Start VALIDATION...")
+            print("Start VALIDATION...")
             for data, target in val_loader:
                 data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
-                #target = target.unsqueeze(-1)
+                target = target.unsqueeze(-1)
                 output = model(data)
-                target = target.unsqueeze(1)
+                #target = target.unsqueeze(1)
                 loss = loss_fn(output, target)
                 val_loss.update(loss.item(), n=len(target))
                 pred = output.round()  # get the prediction
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
-            print(f"End VALIDATION...")
+            print(f"Validation loss: {val_loss}")
+            print("End VALIDATION...")
 
         is_best = val_accuracy.val > best_acc1
         best_acc1 = max(val_accuracy.val, best_acc1)
