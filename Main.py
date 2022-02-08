@@ -149,7 +149,7 @@ def main_worker(args):
         validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     # Add the loss function and the optimizer to de wandb config file
-    wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
+    #wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
     print("Start training...")
     #train_accuracies, train_losses, val_accuracies, val_losses = train_model(
         #model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
