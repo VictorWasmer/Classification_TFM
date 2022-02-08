@@ -55,14 +55,15 @@ def main():
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
     
-    print("Initializing WandB")                
-    wandb_id = wandb.util.generate_id()
-    wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
+    #print("Initializing WandB")                
+    #wandb_id = wandb.util.generate_id()
+    #wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
-    main_worker(args, wandb)
+    #main_worker(args, wandb)
+    main_worker(args)
 
-
-def main_worker(args, wandb):
+#defmain_worker(args, wandb):
+def main_worker(args):
     global best_acc1
     print("-----START-----")
 
@@ -150,8 +151,10 @@ def main_worker(args, wandb):
     # Add the loss function and the optimizer to de wandb config file
     wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
     print("Start training...")
+    #train_accuracies, train_losses, val_accuracies, val_losses = train_model(
+        #model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
     train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-        model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
+        model, optimizer, criterion, train_loader, val_loader, hparams, args, best_accuracy= best_acc1)
     print("Training end")
 
     model_date = time.strftime("%Y%m%d-%H%M%S")

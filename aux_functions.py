@@ -5,7 +5,7 @@ import copy
 from AverageMeter import AverageMeter
 import shutil
 
-def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wandb, args, best_accuracy = None):
+def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, args, best_accuracy = None):
 
     train_accuracies, train_losses, val_accuracies, val_losses = [], [], [], []
     val_loss = AverageMeter()
@@ -38,6 +38,9 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
             train_accuracy.update(acc, n=len(target))
             print(f"End TRAIN Iteration: {i}")
 
+        print(f"Epoch {epoch} avg train accuracy = {train_accuracy.avg}.")
+        print(f"Epoch {epoch} avg train loss = {train_loss.avg}.")
+
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
 
@@ -58,7 +61,10 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
                 pred = output.round()  # get the prediction
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
-            print(f"Validation loss: {val_loss}")
+            
+            print(f"Epoch {epoch} avg val accuracy = {val_accuracy.avg}.")
+            print(f"Epoch {epoch} avg val loss = {val_loss.avg}.")
+
             print("End VALIDATION...")
 
         is_best = val_accuracy.val > best_acc1
@@ -74,12 +80,13 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
 
-        print("Logging metrics to WandB")
-        wandb.log({"Epoch Validation Loss": val_loss.avg,
-                  "Epoch Validation Accuracy": val_accuracy.avg, 
-                  "Epoch Train Loss": train_loss.avg,
-                  "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
-        wandb.save('checkpoint.pth.tar')
+        #print("Logging metrics to WandB")
+        # wandb.log({"Epoch Validation Loss": val_loss.avg,
+        #           "Epoch Validation Accuracy": val_accuracy.avg, 
+        #           "Epoch Train Loss": train_loss.avg,
+        #           "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
+        # wandb.save('checkpoint.pth.tar')
+        
         print(f"End epoch {epoch}")
     return train_accuracies, train_losses, val_accuracies, val_losses
 
