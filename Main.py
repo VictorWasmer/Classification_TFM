@@ -54,7 +54,8 @@ def main():
                     'learning_rate': args.lr,
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
-    
+    print(f"Parameters used in run: {time.asctime()}")                 
+    print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}")
     #print("Initializing WandB")                
     #wandb_id = wandb.util.generate_id()
     #wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
@@ -66,6 +67,7 @@ def main():
 def main_worker(args):
     global best_acc1
     print("-----START-----")
+    print(f"Start time: {time.asctime()}")  
 
     print("Instantiating and setting Mobilenetv3")
     # Instantiate the model and modify the last layer to our specific case
@@ -163,6 +165,7 @@ def main_worker(args):
     print("Saving model...")
     torch.save(model.state_dict(), os.path.join("models", filename))
     print("Model saved")
+    print(f"End time: {time.asctime()}")  
     print("-----END-----")
 
 if __name__ == '__main__':
