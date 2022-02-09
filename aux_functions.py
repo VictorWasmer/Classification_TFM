@@ -79,8 +79,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
         
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
-        time = time.asctime()
-        print(time)
+        print(time.asctime())
         #print("Logging metrics to WandB")
         # wandb.log({"Epoch Validation Loss": val_loss.avg,
         #           "Epoch Validation Accuracy": val_accuracy.avg, 
