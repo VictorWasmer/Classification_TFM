@@ -43,7 +43,7 @@ best_acc1 = 0
 
 def main():
 
-    print("Setting arg parser...")
+    print("Setting arg parser...", flush = True)
     args = parser.parse_args()
 
     #track_params = {key_track: hparams[key_track] for key_track in params_to_track}
@@ -54,8 +54,8 @@ def main():
                     'learning_rate': args.lr,
                     'momentum': args.momentum,
                     'weight_decay': args.weight_decay}
-    print(f"Parameters used in run: {time.asctime()}")                 
-    print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}")
+    print(f"Parameters used in run: {time.asctime()}", flush = True)                 
+    print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}", flush = True)
     #print("Initializing WandB")                
     #wandb_id = wandb.util.generate_id()
     #wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
@@ -66,10 +66,10 @@ def main():
 #defmain_worker(args, wandb):
 def main_worker(args):
     global best_acc1
-    print("-----START-----")
-    print(f"Start time: {time.asctime()}")  
+    print("-----START-----", flush = True)
+    print(f"Start time: {time.asctime()}", flush = True)  
 
-    print("Instantiating and setting Mobilenetv3")
+    print("Instantiating and setting Mobilenetv3", flush = True)
     # Instantiate the model and modify the last layer to our specific case
     model = models.mobilenet_v3_small(pretrained=True)
     model.classifier[3] = nn.Sequential(
@@ -169,4 +169,5 @@ def main_worker(args):
     print("-----END-----")
 
 if __name__ == '__main__':
+    print("Calling main function", flush = True)
     main()
