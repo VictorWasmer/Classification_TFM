@@ -5,7 +5,7 @@ import copy
 from AverageMeter import AverageMeter
 import shutil
 
-def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, args, best_accuracy = None):
+def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wandb, args, best_accuracy = None):
 
     train_accuracies, train_losses, val_accuracies, val_losses = [], [], [], []
     val_loss = AverageMeter()
@@ -23,7 +23,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
         train_loss.reset()
         train_accuracy.reset()
         for i, (data, target) in enumerate(train_loader):
-            #print(f"Start TRAIN Iteration: {i}")
+            print(f"Start TRAIN Iteration: {i}", flush = True)
             data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
             target = target.unsqueeze(-1)
             optimizer.zero_grad()
@@ -36,7 +36,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
             pred = output.round()  # get the prediction
             acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
             train_accuracy.update(acc, n=len(target))
-            #print(f"End TRAIN Iteration: {i}")
+            print(f"End TRAIN Iteration: {i}", flush = True)
 
         print(f"Epoch {epoch} avg train accuracy = {train_accuracy.avg}.", flush = True)
         print(f"Epoch {epoch} avg train loss = {train_loss.avg}.", flush = True)
@@ -79,13 +79,13 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
         
         val_losses.append(val_loss.avg)
         val_accuracies.append(val_accuracy.avg)
-        print(time.asctime())
-        #print("Logging metrics to WandB")
-        # wandb.log({"Epoch Validation Loss": val_loss.avg,
-        #           "Epoch Validation Accuracy": val_accuracy.avg, 
-        #           "Epoch Train Loss": train_loss.avg,
-        #           "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
-        # wandb.save('checkpoint.pth.tar')
+        print(time.asctime(), flush = True)
+        print("Logging metrics to WandB", flush = True)
+        wandb.log({"Epoch Validation Loss": val_loss.avg,
+                   "Epoch Validation Accuracy": val_accuracy.avg, 
+                   "Epoch Train Loss": train_loss.avg,
+                   "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
+        wandb.save('checkpoint.pth.tar')
         
         print(f"End epoch {epoch}", flush = True)
     return train_accuracies, train_losses, val_accuracies, val_losses

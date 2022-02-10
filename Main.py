@@ -61,15 +61,13 @@ def main():
                     'weight_decay': args.weight_decay}
     print(f"Parameters used in run: {time.asctime()}", flush = True)                 
     print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}", flush = True)
-    #print("Initializing WandB")                
-    #wandb_id = wandb.util.generate_id()
-    #wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
+    print("Initializing WandB", flush = True)                
+    wandb_id = wandb.util.generate_id()
+    wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
-    #main_worker(args, wandb)
-    main_worker(args)
+    main_worker(args, wandb)
 
-#defmain_worker(args, wandb):
-def main_worker(args):
+def main_worker(args, wandb):
     global best_acc1
     print("-----START-----", flush = True)
     print(f"Start time: {time.asctime()}", flush = True)  
@@ -156,12 +154,12 @@ def main_worker(args):
         validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     # Add the loss function and the optimizer to de wandb config file
-    #wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
+    wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
     print("Start training...", flush = True)
-    #train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-        #model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
     train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-        model, optimizer, criterion, train_loader, val_loader, hparams, args, best_accuracy= best_acc1)
+        model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
+    #train_accuracies, train_losses, val_accuracies, val_losses = train_model(
+        #model, optimizer, criterion, train_loader, val_loader, hparams, args, best_accuracy= best_acc1)
     print("Training end", flush = True)
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
