@@ -15,10 +15,10 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
     best_acc1 = best_accuracy
 
     for epoch in range(args.start_epoch, args.epochs):
-        print(f"Start epoch {epoch}")
+        print(f"Start epoch {epoch}", flush = True)
         adjust_learning_rate(optimizer, epoch, args)
         # train
-        print("Setting model in train mode...")
+        print("Setting model in train mode...", flush = True)
         model.train()
         train_loss.reset()
         train_accuracy.reset()
@@ -38,19 +38,19 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
             train_accuracy.update(acc, n=len(target))
             #print(f"End TRAIN Iteration: {i}")
 
-        print(f"Epoch {epoch} avg train accuracy = {train_accuracy.avg}.")
-        print(f"Epoch {epoch} avg train loss = {train_loss.avg}.")
+        print(f"Epoch {epoch} avg train accuracy = {train_accuracy.avg}.", flush = True)
+        print(f"Epoch {epoch} avg train loss = {train_loss.avg}.", flush = True)
 
         train_losses.append(train_loss.avg)
         train_accuracies.append(train_accuracy.avg)
 
-        print("Setting model in eval mode...")
+        print("Setting model in eval mode...", flush = True)
         # validation
         model.eval()
         val_loss.reset()
         val_accuracy.reset()
         with torch.no_grad():
-            print("Start VALIDATION...")
+            print("Start VALIDATION...", flush = True)
             for data, target in val_loader:
                 data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
                 target = target.unsqueeze(-1)
@@ -62,14 +62,14 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
                 acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
                 val_accuracy.update(acc, n=len(target))
             
-            print(f"Epoch {epoch} avg val accuracy = {val_accuracy.avg}.")
-            print(f"Epoch {epoch} avg val loss = {val_loss.avg}.")
+            print(f"Epoch {epoch} avg val accuracy = {val_accuracy.avg}.", flush = True)
+            print(f"Epoch {epoch} avg val loss = {val_loss.avg}.", flush = True)
 
-            print("End VALIDATION...")
+            print("End VALIDATION...", flush = True)
 
         is_best = val_accuracy.val > best_acc1
         best_acc1 = max(val_accuracy.val, best_acc1)
-        print("Saving Checkpoint...")
+        print("Saving Checkpoint...", flush = True)
         save_checkpoint({
                 'epoch': epoch + 1,
                 'state_dict': model.state_dict(),
@@ -87,7 +87,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, ar
         #           "Epoch Train Accuracy": train_accuracy.avg}, step = epoch)
         # wandb.save('checkpoint.pth.tar')
         
-        print(f"End epoch {epoch}")
+        print(f"End epoch {epoch}", flush = True)
     return train_accuracies, train_losses, val_accuracies, val_losses
 
 

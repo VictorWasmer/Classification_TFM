@@ -46,6 +46,11 @@ def main():
     print("Setting arg parser...", flush = True)
     args = parser.parse_args()
 
+    seed = 0
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
     #track_params = {key_track: hparams[key_track] for key_track in params_to_track}
 
     track_params = {'n_epochs': args.epochs, 
@@ -77,21 +82,21 @@ def main_worker(args):
         nn.Sigmoid())
 
     # Send the model to GPU
-    print("Sending model to hparams['device']")
+    print("Sending model to hparams['device']", flush = True)
     model.to(hparams['device'])
     train_classifier = False
     if train_classifier:
-        print("Setting all req_grad of the model to false")
+        print("Setting all req_grad of the model to false", flush = True)
         # Set all req_grad at False
         for param in model.parameters():
             param.requires_grad = False
 
         # We only want to train the classifier part
-        print("Setting classifier req_grad of the model to true")
+        print("Setting classifier req_grad of the model to true", flush = True)
 
         model.classifier.requires_grad_()
 
-    print("Creating the params to update list")
+    print("Creating the params to update list", flush = True)
     params_to_update = []
     for name, param in model.named_parameters():
         if param.requires_grad:
@@ -105,7 +110,7 @@ def main_worker(args):
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
+            print("=> loading checkpoint '{}'".format(args.resume), flush = True)
 
             checkpoint = torch.load(args.resume, map_location=hparams['device'])
             
@@ -114,9 +119,9 @@ def main_worker(args):
             model.load_state_dict(checkpoint['state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer'])
             print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
+                  .format(args.resume, checkpoint['epoch']), flush = True)
         else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
+            print("=> no checkpoint found at '{}'".format(args.resume), flush = True)
 
 
     #transformations = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -124,7 +129,7 @@ def main_worker(args):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                     std=[0.229, 0.224, 0.225])
     # Instantiation of the dataset
-    print("Train and val datasets creation")
+    print("Train and val datasets creation", flush = True)
     train_set = CustomImageDataset(annotations_file=paths.train_annotation_path,
                                     img_dir=paths.train_img_path,
                                     transform=transforms.Compose([
@@ -143,30 +148,30 @@ def main_worker(args):
     #train_set, val_set = split_dataset(my_dataset, 0.8) #Split already done in folders
 
     # Dataloader creation
-    print("Creating train Dataloader")
+    print("Creating train Dataloader", flush = True)
     train_loader = DataLoader(
         train_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
-    print("Creating validation Dataloader")
+    print("Creating validation Dataloader", flush = True)
     val_loader = DataLoader(
         validation_set, batch_size=args.batch_size, shuffle=True) #, collate_fn = collate_fn
 
     # Add the loss function and the optimizer to de wandb config file
     #wandb.config.update({"Loss function": criterion, "Optimizer": optimizer})
-    print("Start training...")
+    print("Start training...", flush = True)
     #train_accuracies, train_losses, val_accuracies, val_losses = train_model(
         #model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
     train_accuracies, train_losses, val_accuracies, val_losses = train_model(
         model, optimizer, criterion, train_loader, val_loader, hparams, args, best_accuracy= best_acc1)
-    print("Training end")
+    print("Training end", flush = True)
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
     filename = "final_model_%s.pt" % model_date
 
-    print("Saving model...")
+    print("Saving model...", flush = True)
     torch.save(model.state_dict(), os.path.join("models", filename))
-    print("Model saved")
-    print(f"End time: {time.asctime()}")  
-    print("-----END-----")
+    print("Model saved", flush = True)
+    print(f"End time: {time.asctime()}", flush = True)  
+    print("-----END-----", flush = True)
 
 if __name__ == '__main__':
     print("Calling main function", flush = True)
