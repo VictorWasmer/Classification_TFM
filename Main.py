@@ -80,7 +80,7 @@ def main_worker(args, wandb):
         nn.Sigmoid())
 
     # Send the model to GPU
-    print("Sending model to hparams['device']", flush = True)
+    print(f"Sending model to {hparams['device']}", flush = True)
     model.to(hparams['device'])
     train_classifier = False
     if train_classifier:
