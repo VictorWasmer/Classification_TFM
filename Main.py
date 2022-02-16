@@ -74,9 +74,9 @@ def main_worker(args, wandb):
 
     print("Instantiating and setting Mobilenetv3", flush = True)
     # Instantiate the model and modify the last layer to our specific case
-    model = models.mobilenet_v3_small(pretrained=True)
+    model = models.mobilenet_v3_large(pretrained=True)
     model.classifier[3] = nn.Sequential(
-        nn.Linear(in_features=1024, out_features=args.model_outputs, bias=True),
+        nn.Linear(in_features=1280, out_features=args.model_outputs, bias=True),
         nn.Sigmoid())
 
     # Send the model to GPU
