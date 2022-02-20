@@ -25,4 +25,4 @@ with torch.no_grad():
      curr_time = starter.elapsed_time(ender)/1000
      total_time += curr_time
 Throughput = (repetitions*64)/total_time
-print(f'Final Throughput: {Throughput}')
+print(f'Final Throughput: {Throughput}', flush=True)
