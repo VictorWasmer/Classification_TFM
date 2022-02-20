@@ -23,12 +23,12 @@ train_loader = DataLoader(
 val_loader = DataLoader(
     val_set, batch_size=hparams['batch_size'], shuffle=True)
 
-model = models.mobilenet_v3_small(pretrained=True)
+model = models.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
-    nn.Linear(in_features=1024,
-              out_features=hparams['num_classes'], bias=True),
-    nn.Sigmoid())
-model.load_state_dict(torch.load('models\model_20211117-125007.pt', map_location=hparams['device']))
+    nn.Linear(in_features=1280, out_features = 1, bias=True),
+    nn.Sigmoid())    
+
+model.load_state_dict(torch.load('models\final_model_20220217-010634.pt', map_location=hparams['device']))
 
 model.eval()
 

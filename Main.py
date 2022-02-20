@@ -1,5 +1,6 @@
 import os
 import argparse
+from random import random
 import torch
 from torch import optim
 #from torch._C import int8
@@ -9,6 +10,7 @@ from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
 import time
+import random
 from definitions import hparams
 import paths
 from aux_functions import split_dataset, train_model, collate_fn
@@ -46,10 +48,10 @@ def main():
     print("Setting arg parser...", flush = True)
     args = parser.parse_args()
 
-    seed = 0
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    torch.manual_seed(0)
+    torch.cuda.manual_seed(0)
+    torch.cuda.manual_seed_all(0)
+    random.seed(0)
 
     #track_params = {key_track: hparams[key_track] for key_track in params_to_track}
 
