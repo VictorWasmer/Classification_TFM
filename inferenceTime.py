@@ -11,7 +11,9 @@ model.classifier[3] = nn.Sequential(
     nn.Sigmoid())    
 
 device = torch.device('cuda')
-model.load_state_dict(torch.load('models\final_model_20220217-010634.pt', map_location=device))
+
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
+
 model.to(device)
 dummy_input = torch.randn(1, 3,224,224,dtype=torch.float).to(device)
 starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
