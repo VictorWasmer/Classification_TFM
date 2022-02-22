@@ -44,7 +44,7 @@ warmup = 0
 for data, target in train_loader:
    data, target = data.float().to(device), target.float().to(device)
    target = target.unsqueeze(-1)
-   _ = model(model)
+   _ = model(data)
    warmup = warmup + 1
    if warmup == warmupIterations:
       break
