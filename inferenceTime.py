@@ -3,7 +3,7 @@ from torch import nn
 from torchvision import models
 import numpy as np
 
-np.random.seed(0)
+torch.manual_seed(0)
 
 model = models.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
