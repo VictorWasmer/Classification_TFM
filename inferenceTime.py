@@ -60,7 +60,7 @@ with torch.no_grad():
       ender.record()
       # WAIT FOR GPU SYNC
       torch.cuda.synchronize()
-      print(f'Output: {round(output)} Target: {target}.')
+      print(f'Output: {output} Target: {target}.')
       curr_time = starter.elapsed_time(ender)
       timings[rep] = curr_time
       rep = rep+1
