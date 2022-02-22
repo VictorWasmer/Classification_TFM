@@ -56,10 +56,11 @@ with torch.no_grad():
       data, target = data.float().to(device), target.float().to(device)
       target = target.unsqueeze(-1)
       starter.record()
-      _ = model(data)
+      output = model(data)
       ender.record()
       # WAIT FOR GPU SYNC
       torch.cuda.synchronize()
+      print(f'Output: {round(output)} Target: {target}.')
       curr_time = starter.elapsed_time(ender)
       timings[rep] = curr_time
       rep = rep+1
