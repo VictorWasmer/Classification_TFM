@@ -4,6 +4,7 @@ import torch
 import copy
 from AverageMeter import AverageMeter
 import shutil
+import torch.nn as nn
 
 def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wandb, args, best_accuracy = None):
 
@@ -90,6 +91,10 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         print(f"End epoch {epoch}", flush = True)
     return train_accuracies, train_losses, val_accuracies, val_losses
 
+def print_size_of_model(model):
+    torch.save(model.state_dict(), "temp.p")
+    print('Size (MB):', os.path.getsize("temp.p")/1e6)
+    os.remove('temp.p')
 
 def split_dataset(dataset, train_portion):
     train_size = int(train_portion * len(dataset))
@@ -114,6 +119,28 @@ def adjust_learning_rate(optimizer, epoch, args):
     lr = args.lr * (0.1 ** (epoch // 30))
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
+class QuantizedMobilenet(nn.Module):
+    def __init__(self, model_fp32):
+        super(QuantizedMobilenet, self).__init__()
+        # QuantStub converts tensors from floating point to quantized.
+        # This will only be used for inputs.
+        self.quant = torch.quantization.QuantStub()
+        # DeQuantStub converts tensors from quantized to floating point.
+        # This will only be used for outputs.
+        self.dequant = torch.quantization.DeQuantStub()
+        # FP32 model
+        self.model_fp32 = model_fp32
+
+    def forward(self, x):
+        # manually specify where tensors will be converted from floating
+        # point to quantized in the quantized model
+        x = self.quant(x)
+        x = self.model_fp32(x)
+        # manually specify where tensors will be converted from quantized
+        # to floating point in the quantized model
+        x = self.dequant(x)
+        return x
 
 #!From here to the end is deprecated code
 

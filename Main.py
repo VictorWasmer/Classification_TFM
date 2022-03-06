@@ -1,6 +1,7 @@
 import os
 import argparse
 from random import random
+from sentry_sdk import flush
 import torch
 from torch import optim
 #from torch._C import int8
@@ -13,7 +14,7 @@ import time
 import random
 from definitions import hparams
 import paths
-from aux_functions import split_dataset, train_model, collate_fn
+from aux_functions import QuantizedMobilenet, print_size_of_model, split_dataset, train_model, collate_fn
 import wandb
 
 parser = argparse.ArgumentParser(description='Classification_TFM Training')
@@ -52,6 +53,9 @@ def main():
     torch.cuda.manual_seed(0)
     torch.cuda.manual_seed_all(0)
     random.seed(0)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
 
     #track_params = {key_track: hparams[key_track] for key_track in params_to_track}
 
@@ -165,11 +169,35 @@ def main_worker(args, wandb):
     print("Training end", flush = True)
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
-    filename = "final_model_%s.pt" % model_date
-
+    filename = "f32_model_%s.pt" % model_date
     print("Saving model...", flush = True)
     torch.save(model.state_dict(), os.path.join("models", filename))
+    print_size_of_model(model)
     print("Model saved", flush = True)
+
+    print("Starting QAT", flush = True)
+
+    quantized_model = QuantizedMobilenet(model_fp32=model)
+    quantization_config = torch.quantization.get_default_qconfig("fbgemm")
+    quantized_model.qconfig = quantization_config
+    print(f"Quantized model config: {quantized_model.qconfig}", flush= True)
+    torch.quantization.prepare_qat(quantized_model, inplace=True)
+    quantized_model.train()
+    best_acc1 = 0
+    train_accuracies, train_losses, val_accuracies, val_losses = train_model(
+        quantized_model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
+    quantized_model.to('cpu')
+    quantized_model = torch.quantization.convert(quantized_model, inplace=True)
+
+    quantized_model.eval()
+
+    filename = "int8_model_%s.pt" % model_date
+    print("Saving model...", flush = True)
+    torch.save(model.state_dict(), os.path.join("models", filename))
+    print_size_of_model(model)
+    print("Model saved", flush = True)
+
+
     print(f"End time: {time.asctime()}", flush = True)  
     print("-----END-----", flush = True)
 
