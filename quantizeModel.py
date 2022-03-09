@@ -204,6 +204,6 @@ with torch.no_grad():
          break
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
-wandb.log("Inference Time":mean_syn)
+wandb.log({"Inference Time": mean_syn})
 
 print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
