@@ -64,7 +64,8 @@ def main():
                     'batch_size': args.batch_size,
                     'learning_rate': args.lr,
                     'momentum': args.momentum,
-                    'weight_decay': args.weight_decay}
+                    'weight_decay': args.weight_decay,
+                    'quantized_model': "N"}
     print(f"Parameters used in run: {time.asctime()}", flush = True)                 
     print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}", flush = True)
     print("Initializing WandB", flush = True)                
@@ -174,30 +175,6 @@ def main_worker(args, wandb):
     torch.save(model.state_dict(), os.path.join("models", filename))
     print_size_of_model(model)
     print("Model saved", flush = True)
-
-    print("Starting QAT", flush = True)
-
-    quantized_model = QuantizedMobilenet(model_fp32=model)
-    quantization_config = torch.quantization.get_default_qconfig("fbgemm")
-    quantized_model.qconfig = quantization_config
-    print(f"Quantized model config: {quantized_model.qconfig}", flush= True)
-    torch.quantization.prepare_qat(quantized_model, inplace=True)
-    quantized_model.train()
-    best_acc1 = 0
-    train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-        quantized_model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
-    quantized_model.to('cpu')
-    quantized_model = torch.quantization.convert(quantized_model, inplace=True)
-
-    quantized_model.eval()
-
-    filename = "int8_model_%s.pt" % model_date
-    print("Saving model...", flush = True)
-    torch.save(model.state_dict(), os.path.join("models", filename))
-    print_size_of_model(model)
-    print("Model saved", flush = True)
-
-
     print(f"End time: {time.asctime()}", flush = True)  
     print("-----END-----", flush = True)
 
