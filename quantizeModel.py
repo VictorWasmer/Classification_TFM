@@ -104,6 +104,7 @@ val_loader = DataLoader(
     validation_set, batch_size=args.batch_size, shuffle=True)
 
 #! GPU-WARM-UP
+print("GPU Warm-up", flush = True)
 warmup = 0
 for data, target in train_loader:
    data, target = data.float().to(device), target.float().to(device)
@@ -114,6 +115,7 @@ for data, target in train_loader:
       break
 
 #! MEASURE PERFORMANCE OF THE NON QUANTIZED MODEL
+print("Evaluating performance...", flush = True)
 with torch.no_grad():
    rep = 0
    for data, target in train_loader:
@@ -202,4 +204,6 @@ with torch.no_grad():
          break
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
+wandb.log("Inference Time":mean_syn)
+
 print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
