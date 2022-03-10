@@ -102,11 +102,13 @@ train_loader = DataLoader(
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
     validation_set, batch_size=args.batch_size, shuffle=True)
+performance_dataloader = DataLoader(
+   train_set, batch_size=1, shuffle=True)
 
 #! GPU-WARM-UP
 print("GPU Warm-up", flush = True)
 warmup = 0
-for data, target in train_loader:
+for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
    target = target.unsqueeze(-1)
    _ = model(data)
@@ -118,7 +120,7 @@ for data, target in train_loader:
 print("Evaluating performance...", flush = True)
 with torch.no_grad():
    rep = 0
-   for data, target in train_loader:
+   for data, target in performance_dataloader:
       data, target = data.float().to(device), target.float().to(device)
       target = target.unsqueeze(-1)
       starter.record()
@@ -178,7 +180,7 @@ print("Model saved", flush = True)
 
 #! GPU-WARM-UP
 warmup = 0
-for data, target in train_loader:
+for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
    target = target.unsqueeze(-1)
    _ = quantized_model(data)
@@ -189,7 +191,7 @@ for data, target in train_loader:
 #! MEASURE PERFORMANCE OF THE QUANTIZED MODEL
 with torch.no_grad():
    rep = 0
-   for data, target in train_loader:
+   for data, target in performance_dataloader:
       data, target = data.float().to(device), target.float().to(device)
       target = target.unsqueeze(-1)
       starter.record()

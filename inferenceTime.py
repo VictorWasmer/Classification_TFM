@@ -8,6 +8,11 @@ import paths
 import numpy as np
 
 torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+random.seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 # Model Setup
 model = models.mobilenet_v3_large(pretrained=True)
