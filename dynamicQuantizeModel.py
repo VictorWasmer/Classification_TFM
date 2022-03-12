@@ -20,20 +20,7 @@ random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-#! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.mobilenet_v3_large(pretrained=True)
-model.classifier[3] = nn.Sequential(
-    nn.Linear(in_features=1280, out_features = 1, bias=True),
-    nn.Sigmoid())    
-device = torch.device('cuda')
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
-model.to(device)
-
-#! EVENT SETUP
-starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-repetitions = 300
-timings=np.zeros((repetitions,1))
-warmupIterations = 10
+criterion = nn.BCELoss()
 
 #! DATALOADERS SETUP
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -53,6 +40,24 @@ val_loader = DataLoader(
     
 performance_dataloader = DataLoader(
    validation_set, batch_size=1, shuffle=True)
+
+#! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
+model = models.mobilenet_v3_large(pretrained=True)
+model.classifier[3] = nn.Sequential(
+    nn.Linear(in_features=1280, out_features = 1, bias=True),
+    nn.Sigmoid())    
+device = torch.device('cuda')
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
+model.to(device)
+
+#! EVALUATE NON-QUANTIZED MODEL
+evaluate_model(model, criterion, val_loader)
+
+#! EVENT SETUP
+starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+repetitions = 300
+timings=np.zeros((repetitions,1))
+warmupIterations = 10
 
 #! GPU-WARM-UP
 print("GPU Warm-up", flush = True)
@@ -94,12 +99,11 @@ model.to('cpu')
 quantized_model = torch.quantization.quantize_dynamic(
     model, {torch.nn.Linear}, dtype=torch.qint8
 )
-model.to(device)
+quantized_model.to(device)
 
 #! EVALUATE QUANTIZED MODEL
 
-criterion = nn.BCELoss()
-evaluate_model(model, criterion, val_loader)
+evaluate_model(quantized_model, criterion, val_loader)
 
 #! SAVING QUANTIZED MODEL
 model_date = time.strftime("%Y%m%d-%H%M%S")
