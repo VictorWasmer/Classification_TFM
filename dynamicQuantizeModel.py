@@ -99,7 +99,7 @@ model.to(device)
 #! EVALUATE QUANTIZED MODEL
 
 criterion = nn.BCELoss()
-evaluate_model(model, hparams, criterion, val_loader)
+evaluate_model(model, criterion, val_loader)
 
 #! SAVING QUANTIZED MODEL
 model_date = time.strftime("%Y%m%d-%H%M%S")
@@ -110,6 +110,7 @@ print_size_of_model(quantized_model)
 print("Model saved", flush = True)
 
 #! GPU-WARM-UP
+print("GPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
@@ -120,6 +121,7 @@ for data, target in performance_dataloader:
       break
 
 #! MEASURE PERFORMANCE OF THE QUANTIZED MODEL
+print("Evaluating performance...", flush = True)
 with torch.no_grad():
    rep = 0
    for data, target in performance_dataloader:
