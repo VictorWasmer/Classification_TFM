@@ -52,7 +52,7 @@ val_loader = DataLoader(
     validation_set, batch_size=64, shuffle=True)
     
 performance_dataloader = DataLoader(
-   val_loader, batch_size=1, shuffle=True)
+   validation_set, batch_size=1, shuffle=True)
 
 #! GPU-WARM-UP
 print("GPU Warm-up", flush = True)
