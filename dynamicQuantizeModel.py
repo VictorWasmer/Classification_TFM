@@ -113,6 +113,12 @@ torch.save(quantized_model.state_dict(), os.path.join("models", filename))
 print_size_of_model(quantized_model)
 print("Model saved", flush = True)
 
+#! EVENT SETUP
+starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+repetitions = 300
+timingsQuant=np.zeros((repetitions,1))
+warmupIterations = 10
+
 #! GPU-WARM-UP
 print("GPU Warm-up", flush = True)
 warmup = 0
@@ -137,11 +143,11 @@ with torch.no_grad():
       # WAIT FOR GPU SYNC
       torch.cuda.synchronize()
       curr_time = starter.elapsed_time(ender)
-      timings[rep] = curr_time
+      timingsQuant[rep] = curr_time
       rep = rep+1
       if rep == repetitions:
          break
-mean_syn = np.sum(timings) / repetitions
-std_syn = np.std(timings)
+mean_synQuant = np.sum(timingsQuant) / repetitions
+std_synQuant = np.std(timingsQuant)
 
-print(f'DYNAMIC QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+print(f'DYNAMIC QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_synQuant}ms with a {std_synQuant} deviation.')
