@@ -91,6 +91,30 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         print(f"End epoch {epoch}", flush = True)
     return train_accuracies, train_losses, val_accuracies, val_losses
 
+def evaluate_model(model, hparams,loss_fn, val_loader):
+    val_loss = AverageMeter()
+    val_accuracy = AverageMeter()
+    model.eval()
+    val_loss.reset()
+    val_accuracy.reset()
+    with torch.no_grad():
+        print("Start VALIDATION...", flush = True)
+        for data, target in val_loader:
+            data, target = data.float().to(hparams['device']), target.float().to(hparams['device'])
+            target = target.unsqueeze(-1)
+            output = model(data)
+            #target = target.unsqueeze(1)
+            loss = loss_fn(output, target)
+            val_loss.update(loss.item(), n=len(target))
+            pred = output.round()  # get the prediction
+            acc = pred.eq(target.view_as(pred)).sum().item()/len(target)
+            val_accuracy.update(acc, n=len(target))
+        
+        print(f"Avg val accuracy = {val_accuracy.avg}.", flush = True)
+        print(f"Avg val loss = {val_loss.avg}.", flush = True)
+
+        print("End VALIDATION...", flush = True)
+
 def print_size_of_model(model):
     torch.save(model.state_dict(), "temp.p")
     print('Size (MB):', os.path.getsize("temp.p")/1e6)
