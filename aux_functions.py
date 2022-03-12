@@ -100,7 +100,7 @@ def evaluate_model(model,loss_fn, val_loader):
     with torch.no_grad():
         print("Start VALIDATION...", flush = True)
         for data, target in val_loader:
-            data, target = data.float().to('cuda'), target.float().to('cuda')
+            data, target = data.float().to('cpu'), target.float().to('cpu')
             target = target.unsqueeze(-1)
             output = model(data)
             #target = target.unsqueeze(1)
