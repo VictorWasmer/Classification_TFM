@@ -25,7 +25,7 @@ model = models.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
-device = torch.device('cpu')
+device = torch.device('cuda')
 model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
 model.to(device)
 
@@ -94,6 +94,7 @@ model.to('cpu')
 quantized_model = torch.quantization.quantize_dynamic(
     model, {torch.nn.Linear}, dtype=torch.qint8
 )
+model.to(device)
 
 #! EVALUATE QUANTIZED MODEL
 
