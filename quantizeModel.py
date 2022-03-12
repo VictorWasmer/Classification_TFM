@@ -101,7 +101,7 @@ train_loader = DataLoader(
     train_set, batch_size=args.batch_size, shuffle=True)
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
-    validation_set, batch_size=16, shuffle=True)
+    validation_set, batch_size=8, shuffle=True)
     
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
