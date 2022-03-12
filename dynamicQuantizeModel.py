@@ -49,7 +49,7 @@ model.classifier[3] = nn.Sequential(
 device = torch.device('cpu')
 model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
 model.to(device)
-
+print(model)
 #! EVALUATE NON-QUANTIZED MODEL
 evaluate_model(model, criterion, val_loader)
 
@@ -100,7 +100,7 @@ quantized_model = torch.quantization.quantize_dynamic(
     model, {torch.nn.Linear}, dtype=torch.qint8
 )
 quantized_model.to(device)
-
+print(quantized_model)
 #! EVALUATE QUANTIZED MODEL
 
 evaluate_model(quantized_model, criterion, val_loader)
