@@ -90,7 +90,7 @@ print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predicti
 
 #! QUANTIZATION 
 print("Starting Dynamic Quantization", flush = True)
-
+model.to('cpu')
 quantized_model = torch.quantization.quantize_dynamic(
     model, {torch.nn.Linear}, dtype=torch.qint8
 )
