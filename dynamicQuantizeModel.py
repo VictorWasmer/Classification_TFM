@@ -49,7 +49,7 @@ validation_set = CustomImageDataset(annotations_file=paths.validation_annotation
 
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
-    validation_set, batch_size=8, shuffle=True)
+    validation_set, batch_size=64, shuffle=True)
     
 performance_dataloader = DataLoader(
    val_loader, batch_size=1, shuffle=True)
