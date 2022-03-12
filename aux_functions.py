@@ -91,7 +91,7 @@ def train_model(model, optimizer, loss_fn, train_loader, val_loader, hparams, wa
         print(f"End epoch {epoch}", flush = True)
     return train_accuracies, train_losses, val_accuracies, val_losses
 
-def evaluate_model(model, hparams,loss_fn, val_loader):
+def evaluate_model(model,loss_fn, val_loader):
     val_loss = AverageMeter()
     val_accuracy = AverageMeter()
     model.eval()
@@ -100,7 +100,7 @@ def evaluate_model(model, hparams,loss_fn, val_loader):
     with torch.no_grad():
         print("Start VALIDATION...", flush = True)
         for data, target in val_loader:
-            data, target = data.float().to('cpu'), target.float().to('cpu')
+            data, target = data.float().to('cuda'), target.float().to('cuda')
             target = target.unsqueeze(-1)
             output = model(data)
             #target = target.unsqueeze(1)

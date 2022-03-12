@@ -51,7 +51,7 @@ model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classific
 model.to(device)
 
 #! EVALUATE NON-QUANTIZED MODEL
-evaluate_model(model, criterion,val_loader)
+evaluate_model(model, criterion, val_loader)
 
 #! EVENT SETUP
 starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
