@@ -105,7 +105,7 @@ print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predicti
 print("Starting Static Quantization", flush = True)
 
 #! QUANTIZED MODEL SETUP
-
+print(model)
 model.eval()
 model.fuse_model()
 model.qconfig = torch.quantization.default_qconfig
