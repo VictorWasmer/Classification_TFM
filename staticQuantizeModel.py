@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
-from aux_functions import QuantizedMobilenet, print_size_of_model, train_model
+from aux_functions import QuantizedMobilenet, evaluate_model, print_size_of_model, train_model
 from torch import optim
 import paths
 import numpy as np
@@ -87,7 +87,72 @@ with torch.no_grad():
       starter.record()
       output = model(data)
       ender.record()
-      # WAIT FOR GPU SYNC
+      # WAIT FOR CPU SYNC
+      torch.cuda.synchronize()
+      curr_time = starter.elapsed_time(ender)
+      timings[rep] = curr_time
+      rep = rep+1
+      if rep == repetitions:
+         break
+mean_syn = np.sum(timings) / repetitions
+std_syn = np.std(timings)
+print("Size of model before quantization")
+print_size_of_model(model)
+print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+
+#! QUANTIZATION START
+print("Starting Static Quantization", flush = True)
+
+#! QUANTIZED MODEL SETUP
+model.eval()
+model.fuse_model()
+model.qconfig = torch.quantization.default_qconfig
+print(model.qconfig)
+torch.quantization.prepare(model, inplace=True)
+print('Post Training Quantization Prepare: Inserting Observers')
+
+# Specify quantization configuration
+# Start with simple min/max range estimation and per-tensor quantization of weights
+model.qconfig = torch.quantization.default_qconfig
+print(model.qconfig)
+torch.quantization.prepare(model, inplace=True)
+
+# Calibrate with the training set
+criterion = nn.BCELoss()
+evaluate_model(model,criterion, val_loader)
+print('Post Training Quantization: Calibration done')
+
+# Convert to quantized model
+torch.quantization.convert(model, inplace=True)
+print('Post Training Quantization: Convert done')
+
+print("Size of model after quantization")
+print_size_of_model(model)
+
+evaluate_model(model,criterion, val_loader)
+
+#! GPU-WARM-UP
+print("CPU Warm-up", flush = True)
+warmup = 0
+for data, target in performance_dataloader:
+   data, target = data.float().to(device), target.float().to(device)
+   target = target.unsqueeze(-1)
+   _ = model(data)
+   warmup = warmup + 1
+   if warmup == warmupIterations:
+      break
+
+#! MEASURE PERFORMANCE OF THE QUANTIZED MODEL
+print("Evaluating performance...", flush = True)
+with torch.no_grad():
+   rep = 0
+   for data, target in performance_dataloader:
+      data, target = data.float().to(device), target.float().to(device)
+      target = target.unsqueeze(-1)
+      starter.record()
+      output = model(data)
+      ender.record()
+      # WAIT FOR CPU SYNC
       torch.cuda.synchronize()
       curr_time = starter.elapsed_time(ender)
       timings[rep] = curr_time
@@ -97,19 +162,4 @@ with torch.no_grad():
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
 print_size_of_model(model)
-print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
-
-
-
-#! QUANTIZATION START
-print("Starting Static Quantization", flush = True)
-
-#! QUANTIZED MODEL SETUP
-print(model)
-model.eval()
-model.fuse_model()
-model.qconfig = torch.quantization.default_qconfig
-print(model.qconfig)
-torch.quantization.prepare(model, inplace=True)
-print('Post Training Quantization Prepare: Inserting Observers')
-print(model)
+print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
