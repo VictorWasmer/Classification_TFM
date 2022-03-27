@@ -81,7 +81,7 @@ def main_worker(args, wandb):
 
     print("Instantiating and setting Mobilenetv3", flush = True)
     # Instantiate the model and modify the last layer to our specific case
-    model = models.mobilenet_v3_large(pretrained=True)
+    model = models.quantization.mobilenet_v3_large(pretrained=True)
     model.classifier[3] = nn.Sequential(
         nn.Linear(in_features=1280, out_features=args.model_outputs, bias=True),
         nn.Sigmoid())
@@ -170,7 +170,7 @@ def main_worker(args, wandb):
     print("Training end", flush = True)
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
-    filename = "f32_model_%s.pt" % model_date
+    filename = "quant_model_%s.pt" % model_date
     print("Saving model...", flush = True)
     torch.save(model.state_dict(), os.path.join("models", filename))
     print_size_of_model(model)
