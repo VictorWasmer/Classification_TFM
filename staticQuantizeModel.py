@@ -15,32 +15,6 @@ import time
 from definitions import hparams
 import argparse
 
-#! ARGUMENT PARSER SETUP
-parser = argparse.ArgumentParser(description='Classification_TFM Training')
-parser.add_argument('--epochs', default=hparams['num_epochs'], type=int, metavar='N',
-                    help='number of total epochs to run')
-parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
-                    help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=hparams['batch_size'], type=int,
-                    metavar='N',
-                    help='mini-batch size (default: 256), this is the total '
-                         'batch size of all GPUs on the current node when '
-                         'using Data Parallel or Distributed Data Parallel')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
-                    metavar='LR', help='initial learning rate', dest='lr')
-parser.add_argument('--momentum', default=hparams['momentum'], type=float, metavar='M',
-                    help='momentum')
-parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
-                    metavar='W', help='weight decay (default: 1e-4)',
-                    dest='weight_decay')
-parser.add_argument('--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
-parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
-                    help='evaluate model on validation set')
-parser.add_argument('--model-outputs', default=hparams['model_outputs'], type=int,
-                    metavar='MODEL-OUTS', help='number of outputs of the head classifier')
-print("Setting arg parser...", flush = True)
-args = parser.parse_args()
 
 #! RANDOM SEEDS SETUP
 torch.manual_seed(0)
@@ -50,27 +24,13 @@ random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-#! WANDB SETUP
-track_params = {'n_epochs': args.epochs, 
-                'start_epoch': args.start_epoch, 
-                'batch_size': args.batch_size,
-                'learning_rate': args.lr,
-                'momentum': args.momentum,
-                'weight_decay': args.weight_decay,
-                'quantized_model': "Y"}
-print(f"Parameters used in run: {time.asctime()}", flush = True)                 
-print(f"N_epochs = {args.epochs}, Batch size = {args.batch_size}, Learning rate = {args.lr}, Momentum = {args.momentum}, Weigth_decay = {args.weight_decay}", flush = True)
-print("Initializing WandB", flush = True)                
-wandb_id = wandb.util.generate_id()
-wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
-
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.mobilenet_v3_large(pretrained=True)
+model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
-device = torch.device('cuda')
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
+device = torch.device('cpu')
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_model_20220327-161555.pt", map_location=device))
 model.to(device)
 
 #! EVENT SETUP
@@ -98,7 +58,7 @@ validation_set = CustomImageDataset(annotations_file=paths.validation_annotation
                                 ]))
 print("Creating train Dataloader", flush = True)
 train_loader = DataLoader(
-    train_set, batch_size=args.batch_size, shuffle=True)
+    train_set, batch_size=64, shuffle=True)
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
     validation_set, batch_size=8, shuffle=True)
@@ -107,7 +67,7 @@ performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
 #! GPU-WARM-UP
-print("GPU Warm-up", flush = True)
+print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
@@ -142,71 +102,14 @@ print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predicti
 
 
 #! QUANTIZATION START
-print("Starting QAT", flush = True)
+print("Starting Static Quantization", flush = True)
 
 #! QUANTIZED MODEL SETUP
-quantized_model = QuantizedMobilenet(model_fp32=model)
-quantization_config = torch.quantization.get_default_qconfig("fbgemm")
-quantized_model.qconfig = quantization_config
-print(f"Quantized model config: {quantized_model.qconfig}", flush= True)
-torch.quantization.prepare_qat(quantized_model, inplace=True) #! WE SELECT QUANTIZATION AWARE TRAINING
 
-#! PREPARING QUANTIZED MODEL TRAINING
-params_to_update = []
-for name, param in quantized_model.named_parameters():
-    if param.requires_grad:
-        params_to_update.append(param)
-quantized_model.train()
-best_acc1 = 0
-
-criterion = nn.BCELoss()
-optimizer = optim.Adam(params_to_update, lr=args.lr)
-
-#! TRAIN QUANTIZED MODEL
-train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-    quantized_model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
-
-quantized_model.to('cpu')
-quantized_model = torch.quantization.convert(quantized_model, inplace=True)
-
-quantized_model.eval()
-
-#! SAVING QUANTIZED MODEL
-model_date = time.strftime("%Y%m%d-%H%M%S")
-filename = "int8_model_%s.pt" % model_date
-print("Saving model...", flush = True)
-torch.save(quantized_model.state_dict(), os.path.join("models", filename))
-print_size_of_model(quantized_model)
-print("Model saved", flush = True)
-
-#! GPU-WARM-UP
-warmup = 0
-for data, target in performance_dataloader:
-   data, target = data.float().to(device), target.float().to(device)
-   target = target.unsqueeze(-1)
-   _ = quantized_model(data)
-   warmup = warmup + 1
-   if warmup == warmupIterations:
-      break
-
-#! MEASURE PERFORMANCE OF THE QUANTIZED MODEL
-with torch.no_grad():
-   rep = 0
-   for data, target in performance_dataloader:
-      data, target = data.float().to(device), target.float().to(device)
-      target = target.unsqueeze(-1)
-      starter.record()
-      output = quantized_model(data)
-      ender.record()
-      # WAIT FOR GPU SYNC
-      torch.cuda.synchronize()
-      curr_time = starter.elapsed_time(ender)
-      timings[rep] = curr_time
-      rep = rep+1
-      if rep == repetitions:
-         break
-mean_syn = np.sum(timings) / repetitions
-std_syn = np.std(timings)
-wandb.log({"Inference Time": mean_syn})
-
-print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+model.eval()
+model.fuse_model()
+model.qconfig = torch.quantization.default_qconfig
+print(model.qconfig)
+torch.quantization.prepare(model, inplace=True)
+print('Post Training Quantization Prepare: Inserting Observers')
+print(model)
