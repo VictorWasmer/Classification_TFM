@@ -6,17 +6,108 @@ import torch.nn.functional as F
 import torchvision.models as models
 import torch.nn as nn
 
+import os
+import random
+import torch
+import wandb
+from Custom_Dataset import CustomImageDataset
+from torch.utils.data import DataLoader
+from torchvision import transforms
+import torchvision.models as models
+import torch.nn as nn
+from aux_functions import QuantizedMobilenet, evaluate_model, print_size_of_model, train_model
+from torch import optim
+import paths
+import numpy as np
+import time
+from definitions import hparams
+import argparse
 
-model = models.mobilenet_v3_large(pretrained=True)
+
+#! RANDOM SEEDS SETUP
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+random.seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+#! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
+model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
-    nn.Linear(in_features=1280, out_features=1, bias=True),
-    nn.Sigmoid())
+    nn.Linear(in_features=1280, out_features = 1, bias=True),
+    nn.Sigmoid())    
+device = torch.device('cpu')
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_model_20220327-161555.pt", map_location=device))
+model.to(device)
 
-print(model.features[1].block[0])
-module = model
-#print(list(module.named_parameters()))
+#! EVENT SETUP
+starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+repetitions = 300
+timings=np.zeros((repetitions,1))
+warmupIterations = 10
 
-#print(list(module.named_buffers()))
+#! DATALOADERS SETUP
+normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                              std=[0.229, 0.224, 0.225])
+train_set = CustomImageDataset(annotations_file=paths.train_annotation_path,
+                              img_dir=paths.train_img_path,
+                              transform=transforms.Compose([
+                              transforms.RandomResizedCrop(224),
+                              transforms.RandomHorizontalFlip(),
+                              normalize,
+                              ]))
+validation_set = CustomImageDataset(annotations_file=paths.validation_annotation_path,
+                                img_dir=paths.validation_img_path,
+                                transform=transforms.Compose([
+                                transforms.Resize(256),
+                                transforms.CenterCrop(224),
+                                normalize,
+                                ]))
+print("Creating train Dataloader", flush = True)
+train_loader = DataLoader(
+    train_set, batch_size=64, shuffle=True)
+print("Creating validation Dataloader", flush = True)
+val_loader = DataLoader(
+    validation_set, batch_size=8, shuffle=True)
+    
+performance_dataloader = DataLoader(
+   train_set, batch_size=1, shuffle=True)
+
+#! GPU-WARM-UP
+print("CPU Warm-up", flush = True)
+warmup = 0
+for data, target in performance_dataloader:
+   data, target = data.float().to(device), target.float().to(device)
+   target = target.unsqueeze(-1)
+   _ = model(data)
+   warmup = warmup + 1
+   if warmup == warmupIterations:
+      break
+
+#! MEASURE PERFORMANCE OF THE NON QUANTIZED MODEL
+print("Evaluating performance...", flush = True)
+with torch.no_grad():
+   rep = 0
+   for data, target in performance_dataloader:
+      data, target = data.float().to(device), target.float().to(device)
+      target = target.unsqueeze(-1)
+      starter.record()
+      output = model(data)
+      ender.record()
+      # WAIT FOR CPU SYNC
+      torch.cuda.synchronize()
+      curr_time = starter.elapsed_time(ender)
+      timings[rep] = curr_time
+      rep = rep+1
+      if rep == repetitions:
+         break
+mean_syn = np.sum(timings) / repetitions
+std_syn = np.std(timings)
+print("Size of model before Pruning")
+print_size_of_model(model)
+print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+
 parameters_to_prune = (
     (model.features[0][0], 'weight'),
     
@@ -33,42 +124,51 @@ parameters_to_prune = (
 
     (model.features[4].block[0][0], 'weight'),
     (model.features[4].block[1][0], 'weight'),
-    (model.features[4].block[2][0], 'weight'),
     (model.features[4].block[3][0], 'weight'),
-
 
     (model.features[5].block[0][0], 'weight'),
     (model.features[5].block[1][0], 'weight'),
+    (model.features[5].block[3][0], 'weight'),
 
     (model.features[6].block[0][0], 'weight'),
     (model.features[6].block[1][0], 'weight'),
+    (model.features[6].block[3][0], 'weight'),
 
     (model.features[7].block[0][0], 'weight'),
     (model.features[7].block[1][0], 'weight'),
+    (model.features[7].block[2][0], 'weight'),
 
     (model.features[8].block[0][0], 'weight'),
     (model.features[8].block[1][0], 'weight'),
+    (model.features[8].block[2][0], 'weight'),
 
     (model.features[9].block[0][0], 'weight'),
     (model.features[9].block[1][0], 'weight'),
+    (model.features[9].block[2][0], 'weight'),
 
     (model.features[10].block[0][0], 'weight'),
     (model.features[10].block[1][0], 'weight'),
+    (model.features[10].block[2][0], 'weight'),
 
     (model.features[11].block[0][0], 'weight'),
     (model.features[11].block[1][0], 'weight'),
+    (model.features[11].block[3][0], 'weight'),
 
     (model.features[12].block[0][0], 'weight'),
     (model.features[12].block[1][0], 'weight'),
+    (model.features[12].block[3][0], 'weight'),
 
     (model.features[13].block[0][0], 'weight'),
     (model.features[13].block[1][0], 'weight'),
+    (model.features[13].block[3][0], 'weight'),
 
     (model.features[14].block[0][0], 'weight'),
     (model.features[14].block[1][0], 'weight'),
+    (model.features[14].block[3][0], 'weight'),
 
     (model.features[15].block[0][0], 'weight'),
     (model.features[15].block[1][0], 'weight'),
+    (model.features[15].block[3][0], 'weight'),
 
     (model.features[16][0], 'weight'),
 )
@@ -76,189 +176,8 @@ parameters_to_prune = (
 prune.global_unstructured(
     parameters_to_prune,
     pruning_method=prune.L1Unstructured,
-    amount=0.2,
+    amount=0.21,
 )
-
-print(
-    "Sparsity in features[0] ConvBNActivation: {:.2f}%".format(
-        100. * float(torch.sum(model.features[0][0].weight == 0))
-        / float(model.features[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 1 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[1].block[0][0].weight == 0))
-        / float(model.features[1].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 1 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[1].block[1][0].weight == 0))
-        / float(model.features[1].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 2 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[2].block[0][0].weight == 0))
-        / float(model.features[2].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 2 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[2].block[1][0].weight == 0))
-        / float(model.features[2].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 2 ConvBNActivation 2: {:.2f}%".format(
-        100. * float(torch.sum(model.features[2].block[2][0].weight == 0))
-        / float(model.features[2].block[2][0].weight.nelement())
-    ))
-print(      
-    "Sparsity in features Inverted Residual 3 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[3].block[0][0].weight == 0))
-        / float(model.features[3].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 3 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[3].block[1][0].weight == 0))
-        / float(model.features[3].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 3 ConvBNActivation 2: {:.2f}%".format(
-        100. * float(torch.sum(model.features[2].block[2][0].weight == 0))
-        / float(model.features[3].block[2][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 4 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[4].block[0][0].weight == 0))
-        / float(model.features[4].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 4 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[4].block[1][0].weight == 0))
-        / float(model.features[4].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 4 ConvBNActivation 2: {:.2f}%".format(
-        100. * float(torch.sum(model.features[4].block[2][0].weight == 0))
-        / float(model.features[4].block[2][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 4 ConvBNActivation 3: {:.2f}%".format(
-        100. * float(torch.sum(model.features[4].block[3][0].weight == 0))
-        / float(model.features[4].block[3][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 5 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[5].block[0][0].weight == 0))
-        / float(model.features[5].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 5 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[5].block[1][0].weight == 0))
-        / float(model.features[5].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 6 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[6].block[0][0].weight == 0))
-        / float(model.features[6].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 6 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[6].block[1][0].weight == 0))
-        / float(model.features[6].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 7 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[7].block[0][0].weight == 0))
-        / float(model.features[7].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 7 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[7].block[1][0].weight == 0))
-        / float(model.features[7].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 8 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[8].block[0][0].weight == 0))
-        / float(model.features[8].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 8 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[8].block[1][0].weight == 0))
-        / float(model.features[8].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 9 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[9].block[0][0].weight == 0))
-        / float(model.features[9].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 9 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[9].block[1][0].weight == 0))
-        / float(model.features[9].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 10 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[10].block[0][0].weight == 0))
-        / float(model.features[10].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 10 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[10].block[1][0].weight == 0))
-        / float(model.features[10].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 11 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[11].block[0][0].weight == 0))
-        / float(model.features[11].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 11 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[11].block[1][0].weight == 0))
-        / float(model.features[11].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 12 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[12].block[0][0].weight == 0))
-        / float(model.features[12].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 12 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[12].block[1][0].weight == 0))
-        / float(model.features[12].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 13 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[13].block[0][0].weight == 0))
-        / float(model.features[13].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 13 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[13].block[1][0].weight == 0))
-        / float(model.features[13].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 14 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[14].block[0][0].weight == 0))
-        / float(model.features[14].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 14 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[14].block[1][0].weight == 0))
-        / float(model.features[14].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 15 ConvBNActivation 0: {:.2f}%".format(
-        100. * float(torch.sum(model.features[15].block[0][0].weight == 0))
-        / float(model.features[15].block[0][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features Inverted Residual 15 ConvBNActivation 1: {:.2f}%".format(
-        100. * float(torch.sum(model.features[15].block[1][0].weight == 0))
-        / float(model.features[15].block[1][0].weight.nelement())
-    ))
-print(
-    "Sparsity in features[16] ConvBNActivation: {:.2f}%".format(
-        100. * float(torch.sum(model.features[16][0].weight == 0))
-        / float(model.features[16][0].weight.nelement())
-    ))
 
 print(
     "Global sparsity: {:.2f}%".format(
@@ -278,31 +197,52 @@ print(
 
             + torch.sum(model.features[4].block[0][0].weight == 0)
             + torch.sum(model.features[4].block[1][0].weight == 0)
-            + torch.sum(model.features[4].block[2][0].weight == 0)
             + torch.sum(model.features[4].block[3][0].weight == 0)
 
             + torch.sum(model.features[5].block[0][0].weight == 0)
-            + torch.sum(model.features[5].block[0][0].weight == 0)
+            + torch.sum(model.features[5].block[1][0].weight == 0)
+            + torch.sum(model.features[5].block[3][0].weight == 0)
+
             + torch.sum(model.features[6].block[0][0].weight == 0)
-            + torch.sum(model.features[6].block[0][0].weight == 0)
+            + torch.sum(model.features[6].block[1][0].weight == 0)
+            + torch.sum(model.features[6].block[3][0].weight == 0)
+
             + torch.sum(model.features[7].block[0][0].weight == 0)
-            + torch.sum(model.features[7].block[0][0].weight == 0)
+            + torch.sum(model.features[7].block[1][0].weight == 0)
+            + torch.sum(model.features[7].block[2][0].weight == 0)
+
             + torch.sum(model.features[8].block[0][0].weight == 0)
-            + torch.sum(model.features[8].block[0][0].weight == 0)
+            + torch.sum(model.features[8].block[1][0].weight == 0)
+            + torch.sum(model.features[8].block[2][0].weight == 0)
+
             + torch.sum(model.features[9].block[0][0].weight == 0)
-            + torch.sum(model.features[9].block[0][0].weight == 0)
+            + torch.sum(model.features[9].block[1][0].weight == 0)
+            + torch.sum(model.features[9].block[2][0].weight == 0)
+
             + torch.sum(model.features[10].block[0][0].weight == 0)
-            + torch.sum(model.features[10].block[0][0].weight == 0)
+            + torch.sum(model.features[10].block[1][0].weight == 0)
+            + torch.sum(model.features[10].block[2][0].weight == 0)
+
             + torch.sum(model.features[11].block[0][0].weight == 0)
-            + torch.sum(model.features[11].block[0][0].weight == 0)
+            + torch.sum(model.features[11].block[1][0].weight == 0)
+            + torch.sum(model.features[11].block[3][0].weight == 0)
+
             + torch.sum(model.features[12].block[0][0].weight == 0)
-            + torch.sum(model.features[12].block[0][0].weight == 0)
+            + torch.sum(model.features[12].block[1][0].weight == 0)
+            + torch.sum(model.features[12].block[3][0].weight == 0)
+
             + torch.sum(model.features[13].block[0][0].weight == 0)
-            + torch.sum(model.features[13].block[0][0].weight == 0)
+            + torch.sum(model.features[13].block[1][0].weight == 0)
+            + torch.sum(model.features[13].block[3][0].weight == 0)
+
             + torch.sum(model.features[14].block[0][0].weight == 0)
-            + torch.sum(model.features[14].block[0][0].weight == 0)
+            + torch.sum(model.features[14].block[1][0].weight == 0)
+            + torch.sum(model.features[14].block[3][0].weight == 0)
+
             + torch.sum(model.features[15].block[0][0].weight == 0)
-            + torch.sum(model.features[15].block[0][0].weight == 0)
+            + torch.sum(model.features[15].block[1][0].weight == 0)
+            + torch.sum(model.features[15].block[3][0].weight == 0)
+
             + torch.sum(model.features[16][0].weight == 0)
         )
         / float(
@@ -321,32 +261,87 @@ print(
 
             + model.features[4].block[0][0].weight.nelement()
             + model.features[4].block[1][0].weight.nelement()
-            + model.features[4].block[2][0].weight.nelement()
             + model.features[4].block[3][0].weight.nelement()
 
             + model.features[5].block[0][0].weight.nelement()
-            + model.features[5].block[0][0].weight.nelement()
+            + model.features[5].block[1][0].weight.nelement()
+            + model.features[5].block[3][0].weight.nelement()
+
             + model.features[6].block[0][0].weight.nelement()
-            + model.features[6].block[0][0].weight.nelement()
+            + model.features[6].block[1][0].weight.nelement()
+            + model.features[6].block[3][0].weight.nelement()
+
             + model.features[7].block[0][0].weight.nelement()
-            + model.features[7].block[0][0].weight.nelement()
+            + model.features[7].block[1][0].weight.nelement()
+            + model.features[7].block[2][0].weight.nelement()
+
             + model.features[8].block[0][0].weight.nelement()
-            + model.features[8].block[0][0].weight.nelement()
+            + model.features[8].block[1][0].weight.nelement()
+            + model.features[8].block[2][0].weight.nelement()
+
             + model.features[9].block[0][0].weight.nelement()
-            + model.features[9].block[0][0].weight.nelement()
+            + model.features[9].block[1][0].weight.nelement()
+            + model.features[9].block[2][0].weight.nelement()
+
             + model.features[10].block[0][0].weight.nelement()
-            + model.features[10].block[0][0].weight.nelement()
+            + model.features[10].block[1][0].weight.nelement()
+            + model.features[10].block[2][0].weight.nelement()
+
             + model.features[11].block[0][0].weight.nelement()
-            + model.features[11].block[0][0].weight.nelement()
+            + model.features[11].block[1][0].weight.nelement()
+            + model.features[11].block[3][0].weight.nelement()
+
             + model.features[12].block[0][0].weight.nelement()
-            + model.features[12].block[0][0].weight.nelement()
+            + model.features[12].block[1][0].weight.nelement()
+            + model.features[12].block[3][0].weight.nelement()
+
             + model.features[13].block[0][0].weight.nelement()
-            + model.features[13].block[0][0].weight.nelement()
+            + model.features[13].block[1][0].weight.nelement()
+            + model.features[13].block[3][0].weight.nelement()
+
             + model.features[14].block[0][0].weight.nelement()
-            + model.features[14].block[0][0].weight.nelement()
+            + model.features[14].block[1][0].weight.nelement()
+            + model.features[14].block[3][0].weight.nelement()
+
             + model.features[15].block[0][0].weight.nelement()
-            + model.features[15].block[0][0].weight.nelement()
+            + model.features[15].block[1][0].weight.nelement()
+            + model.features[15].block[3][0].weight.nelement()
+
             + model.features[16][0].weight.nelement()
         )
     )
 )
+
+#! GPU-WARM-UP
+print("CPU Warm-up", flush = True)
+warmup = 0
+for data, target in performance_dataloader:
+   data, target = data.float().to(device), target.float().to(device)
+   target = target.unsqueeze(-1)
+   _ = model(data)
+   warmup = warmup + 1
+   if warmup == warmupIterations:
+      break
+
+#! MEASURE PERFORMANCE OF THE PRUNED MODEL
+print("Evaluating performance...", flush = True)
+with torch.no_grad():
+   rep = 0
+   for data, target in performance_dataloader:
+      data, target = data.float().to(device), target.float().to(device)
+      target = target.unsqueeze(-1)
+      starter.record()
+      output = model(data)
+      ender.record()
+      # WAIT FOR CPU SYNC
+      torch.cuda.synchronize()
+      curr_time = starter.elapsed_time(ender)
+      timings[rep] = curr_time
+      rep = rep+1
+      if rep == repetitions:
+         break
+mean_syn = np.sum(timings) / repetitions
+std_syn = np.std(timings)
+print("Size of model after Pruning")
+print_size_of_model(model)
+print(f'PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
