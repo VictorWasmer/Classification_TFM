@@ -65,12 +65,12 @@ wandb_id = wandb.util.generate_id()
 wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.mobilenet_v3_large(pretrained=True)
+model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
-device = torch.device('cuda')
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device))
+device = torch.device('cpu')
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_model_20220327-161555.pt", map_location=device))
 model.to(device)
 
 #! EVENT SETUP
@@ -107,7 +107,7 @@ performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
 #! GPU-WARM-UP
-print("GPU Warm-up", flush = True)
+print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
@@ -139,24 +139,25 @@ std_syn = np.std(timings)
 print_size_of_model(model)
 print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
 
-
-
 #! QUANTIZATION START
-print("Starting QAT", flush = True)
+print("Starting QAT Quantization", flush = True)
 
 #! QUANTIZED MODEL SETUP
-quantized_model = QuantizedMobilenet(model_fp32=model)
-quantization_config = torch.quantization.get_default_qconfig("fbgemm")
-quantized_model.qconfig = quantization_config
-print(f"Quantized model config: {quantized_model.qconfig}", flush= True)
-torch.quantization.prepare_qat(quantized_model, inplace=True) #! WE SELECT QUANTIZATION AWARE TRAINING
+#model.eval()
+model.fuse_model()
+model.qconfig = torch.quantization.default_qconfig
+print(model.qconfig)
+model.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
+torch.quantization.prepare_qat(model, inplace=True)
+
+print('QAT Prepare: Inserting Observers')
 
 #! PREPARING QUANTIZED MODEL TRAINING
 params_to_update = []
-for name, param in quantized_model.named_parameters():
+for name, param in model.named_parameters():
     if param.requires_grad:
         params_to_update.append(param)
-quantized_model.train()
+model.train()
 best_acc1 = 0
 
 criterion = nn.BCELoss()
@@ -164,16 +165,16 @@ optimizer = optim.Adam(params_to_update, lr=args.lr)
 
 #! TRAIN QUANTIZED MODEL
 train_accuracies, train_losses, val_accuracies, val_losses = train_model(
-    quantized_model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
+    model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
 
-quantized_model.to('cpu')
-quantized_model = torch.quantization.convert(quantized_model, inplace=True)
+model.to('cpu')
+quantized_model = torch.quantization.convert(model, inplace=True)
 
 quantized_model.eval()
 
 #! SAVING QUANTIZED MODEL
 model_date = time.strftime("%Y%m%d-%H%M%S")
-filename = "int8_model_%s.pt" % model_date
+filename = "qat_model_%s.pt" % model_date
 print("Saving model...", flush = True)
 torch.save(quantized_model.state_dict(), os.path.join("models", filename))
 print_size_of_model(quantized_model)
