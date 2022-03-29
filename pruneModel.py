@@ -1,27 +1,16 @@
 import torch
-from torch import nn
 import torch.nn.utils.prune as prune
-import torch.nn.functional as F
-
 import torchvision.models as models
-import torch.nn as nn
-
 import os
 import random
 import torch
-import wandb
 from Custom_Dataset import CustomImageDataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
-import torchvision.models as models
 import torch.nn as nn
-from aux_functions import QuantizedMobilenet, evaluate_model, print_size_of_model, train_model
-from torch import optim
+from aux_functions import  print_size_of_model
 import paths
 import numpy as np
-import time
-from definitions import hparams
-import argparse
 
 
 #! RANDOM SEEDS SETUP
@@ -64,13 +53,14 @@ validation_set = CustomImageDataset(annotations_file=paths.validation_annotation
                                 transforms.CenterCrop(224),
                                 normalize,
                                 ]))
+
 print("Creating train Dataloader", flush = True)
 train_loader = DataLoader(
     train_set, batch_size=64, shuffle=True)
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
     validation_set, batch_size=8, shuffle=True)
-    
+print("Creating performance Dataloader", flush = True)
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
@@ -85,7 +75,7 @@ for data, target in performance_dataloader:
    if warmup == warmupIterations:
       break
 
-#! MEASURE PERFORMANCE OF THE NON QUANTIZED MODEL
+#! MEASURE PERFORMANCE OF THE NON PRUNED MODEL
 print("Evaluating performance...", flush = True)
 with torch.no_grad():
    rep = 0
@@ -180,7 +170,6 @@ prune.global_unstructured(
 )
 
 prune.remove(model, 'weight')
-
 
 print(
     "Global sparsity: {:.2f}%".format(
@@ -315,7 +304,7 @@ print(
     )
 )
 
-#! GPU-WARM-UP
+#! CPU-WARM-UP
 print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:

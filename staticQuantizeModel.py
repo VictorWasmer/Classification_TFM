@@ -1,19 +1,14 @@
 import os
 import random
 import torch
-import wandb
 from Custom_Dataset import CustomImageDataset
 from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
-from aux_functions import QuantizedMobilenet, evaluate_model, print_size_of_model, train_model
-from torch import optim
+from aux_functions import evaluate_model, print_size_of_model
 import paths
 import numpy as np
-import time
-from definitions import hparams
-import argparse
 
 
 #! RANDOM SEEDS SETUP
@@ -62,7 +57,7 @@ train_loader = DataLoader(
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
     validation_set, batch_size=8, shuffle=True)
-    
+print("Creating performance Dataloader", flush = True)    
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
@@ -131,7 +126,7 @@ print_size_of_model(model)
 
 evaluate_model(model,criterion, val_loader)
 
-#! GPU-WARM-UP
+#! CPU-WARM-UP
 print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:

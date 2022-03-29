@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torchvision.models as models
 import torch.nn as nn
-from aux_functions import QuantizedMobilenet, print_size_of_model, train_model
+from aux_functions import print_size_of_model, train_model
 from torch import optim
 import paths
 import numpy as np
@@ -49,6 +49,7 @@ torch.cuda.manual_seed_all(0)
 random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+device = torch.device('cpu')
 
 #! WANDB SETUP
 track_params = {'n_epochs': args.epochs, 
@@ -69,7 +70,6 @@ model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
-device = torch.device('cpu')
 model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_model_20220327-161555.pt", map_location=device))
 model.to(device)
 
@@ -102,7 +102,7 @@ train_loader = DataLoader(
 print("Creating validation Dataloader", flush = True)
 val_loader = DataLoader(
     validation_set, batch_size=8, shuffle=True)
-    
+print("Creating performance Dataloader", flush = True)    
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
@@ -137,27 +137,22 @@ with torch.no_grad():
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
 print_size_of_model(model)
+wandb.log({"Inference Time non-quant": mean_syn})
 print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
 
 #! QUANTIZATION START
 print("Starting QAT Quantization", flush = True)
 
 #! QUANTIZED MODEL SETUP
-#model.eval()
 model.fuse_model()
-model.qconfig = torch.quantization.default_qconfig
-print(model.qconfig)
 model.qconfig = torch.quantization.get_default_qat_qconfig('fbgemm')
 torch.quantization.prepare_qat(model, inplace=True)
-
-print('QAT Prepare: Inserting Observers')
 
 #! PREPARING QUANTIZED MODEL TRAINING
 params_to_update = []
 for name, param in model.named_parameters():
     if param.requires_grad:
         params_to_update.append(param)
-model.train()
 best_acc1 = 0
 
 criterion = nn.BCELoss()
@@ -167,9 +162,7 @@ optimizer = optim.Adam(params_to_update, lr=args.lr)
 train_accuracies, train_losses, val_accuracies, val_losses = train_model(
     model, optimizer, criterion, train_loader, val_loader, hparams, wandb, args, best_acc1)
 
-model.to('cpu')
-quantized_model = torch.quantization.convert(model, inplace=True)
-
+quantized_model = torch.quantization.convert(model.eval(), inplace=True)
 quantized_model.eval()
 
 #! SAVING QUANTIZED MODEL
@@ -180,7 +173,7 @@ torch.save(quantized_model.state_dict(), os.path.join("models", filename))
 print_size_of_model(quantized_model)
 print("Model saved", flush = True)
 
-#! GPU-WARM-UP
+#! CPU-WARM-UP
 warmup = 0
 for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
@@ -208,6 +201,6 @@ with torch.no_grad():
          break
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
-wandb.log({"Inference Time": mean_syn})
+wandb.log({"Inference Time quant": mean_syn})
 
 print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
