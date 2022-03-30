@@ -106,7 +106,7 @@ print("Creating performance Dataloader", flush = True)
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
-#! GPU-WARM-UP
+#! CPU-WARM-UP
 print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
@@ -168,12 +168,13 @@ quantized_model.eval()
 #! SAVING QUANTIZED MODEL
 model_date = time.strftime("%Y%m%d-%H%M%S")
 filename = "qat_model_%s.pt" % model_date
-print("Saving model...", flush = True)
+print(f"Saving model {filename}...", flush = True)
 torch.save(quantized_model.state_dict(), os.path.join("models", filename))
 print_size_of_model(quantized_model)
 print("Model saved", flush = True)
 
 #! CPU-WARM-UP
+print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
    data, target = data.float().to(device), target.float().to(device)
@@ -184,6 +185,7 @@ for data, target in performance_dataloader:
       break
 
 #! MEASURE PERFORMANCE OF THE QUANTIZED MODEL
+print("Evaluating performance...", flush = True)
 with torch.no_grad():
    rep = 0
    for data, target in performance_dataloader:
