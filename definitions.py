@@ -5,7 +5,7 @@ hparams = {
     "momentum": 0.9,
     "num_epochs": 20,
     "batch_size": 32,
-    "device": 'cuda' if torch.cuda.is_available() else 'cpu',
+    "device": 'cpu',
     "model_outputs": 1 #Binary classification
 }
 
