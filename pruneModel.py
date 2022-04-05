@@ -64,7 +64,7 @@ print("Creating performance Dataloader", flush = True)
 performance_dataloader = DataLoader(
    train_set, batch_size=1, shuffle=True)
 
-#! GPU-WARM-UP
+""" #! GPU-WARM-UP
 print("CPU Warm-up", flush = True)
 warmup = 0
 for data, target in performance_dataloader:
@@ -96,7 +96,7 @@ mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
 print("Size of model before Pruning")
 print_size_of_model(model)
-print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.') """
 
 parameters_to_prune = (
     (model.features[0][0], 'weight'),
@@ -163,13 +163,13 @@ parameters_to_prune = (
     (model.features[16][0], 'weight'),
 )
 
-prune.global_unstructured(
+model = prune.global_unstructured(
     parameters_to_prune,
     pruning_method=prune.L1Unstructured,
     amount=0.21,
 )
 
-prune.remove(model, 'weight')
+model = prune.remove(model, name = 'weight')
 
 print(
     "Global sparsity: {:.2f}%".format(
