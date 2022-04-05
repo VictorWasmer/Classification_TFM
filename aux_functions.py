@@ -114,6 +114,7 @@ def evaluate_model(model,loss_fn, val_loader):
         print(f"Avg val loss = {val_loss.avg}.", flush = True)
 
         print("End VALIDATION...", flush = True)
+    return val_accuracy.avg, val_loss.avg
 
 def print_size_of_model(model):
     torch.save(model.state_dict(), "temp.p")

@@ -9,6 +9,7 @@ import torch.nn as nn
 from aux_functions import evaluate_model, print_size_of_model
 import paths
 import numpy as np
+import wandb
 
 
 #! RANDOM SEEDS SETUP
@@ -18,6 +19,12 @@ torch.cuda.manual_seed_all(0)
 random.seed(0)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
+
+#! WANDB SETUP
+track_params = {'quantized_model': "Y (static)"}
+print("Initializing WandB", flush = True)                
+wandb_id = wandb.util.generate_id()
+wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
 model = models.quantization.mobilenet_v3_large(pretrained=True)
@@ -91,6 +98,7 @@ with torch.no_grad():
          break
 mean_syn = np.sum(timings) / repetitions
 std_syn = np.std(timings)
+wandb.log({"Inference Time non-quant": mean_syn})
 print("Size of model before quantization")
 print_size_of_model(model)
 print(f'NON-QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
@@ -124,7 +132,8 @@ print('Post Training Quantization: Convert done')
 print("Size of model after quantization")
 print_size_of_model(model)
 
-evaluate_model(model,criterion, val_loader)
+val_accuracy, val_loss =evaluate_model(model,criterion, val_loader)
+wandb.log({"Epoch Validation Loss": val_loss,"Epoch Validation Accuracy": val_accuracy})
 
 #! CPU-WARM-UP
 print("CPU Warm-up", flush = True)
@@ -155,6 +164,7 @@ with torch.no_grad():
       if rep == repetitions:
          break
 mean_syn = np.sum(timings) / repetitions
+wandb.log({"Inference Time quant": mean_syn})
 std_syn = np.std(timings)
 print_size_of_model(model)
 print(f'QUANTIZED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
