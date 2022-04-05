@@ -169,7 +169,7 @@ model = prune.global_unstructured(
     amount=0.21,
 )
 
-model = prune.remove(model, name = 'weight')
+#model = prune.remove(model, name = 'weight')
 
 print(
     "Global sparsity: {:.2f}%".format(
