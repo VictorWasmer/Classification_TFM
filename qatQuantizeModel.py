@@ -70,8 +70,8 @@ model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_model_20220327-161555.pt", map_location=device))
-model.to(device)
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device)) #quant_model_20220327-161555.pt
+model.to(device) 
 
 #! EVENT SETUP
 starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
