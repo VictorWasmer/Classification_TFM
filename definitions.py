@@ -5,7 +5,7 @@ hparams = {
     "momentum": 0.9,
     "num_epochs": 20,
     "batch_size": 32,
-    "device": 'cpu',
+    "device": 'cuda',
     "model_outputs": 1 #Binary classification
 }
 
