@@ -100,7 +100,7 @@ print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions
 
 parameters_to_prune = [
     (model.features[0][0], 'weight'),
-    #(model.features[0][0], 'bias'),
+    (model.features[0][0], 'bias'),
 
     (model.features[1].block[0][0], 'weight'),
     (model.features[1].block[1][0], 'weight'),
