@@ -79,7 +79,7 @@ def main_worker(args, wandb):
     print("-----START-----", flush = True)
     print(f"Start time: {time.asctime()}", flush = True)  
 
-    print("Instantiating and setting resnet50", flush = True)
+    print("Instantiating and setting resnet18", flush = True)
     # Instantiate the model and modify the last layer to our specific case
     #model = models.quantization.mobilenet_v3_large(pretrained=True)
 
@@ -87,10 +87,15 @@ def main_worker(args, wandb):
     #    nn.Linear(in_features=1280, out_features=args.model_outputs, bias=True),
     #    nn.Sigmoid())
 
-    model = models.quantization.resnet50(pretrained=True)
+    #model = models.quantization.resnet50(pretrained=True)
+    #model.fc = nn.Sequential(   
+    #nn.Linear(in_features=2048, out_features=1, bias=True),
+    #nn.Sigmoid())    
+
+    model = models.quantization.resnet18(pretrained=True)
     model.fc = nn.Sequential(   
-    nn.Linear(in_features=2048, out_features=1, bias=True),
-    nn.Sigmoid())    
+    nn.Linear(in_features=512, out_features=1, bias=True),
+    nn.Sigmoid())   
 
     # Send the model to GPU
     print(f"Sending model to {hparams['device']}", flush = True)
