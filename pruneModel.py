@@ -1,3 +1,4 @@
+from audioop import bias
 import torch
 import torch.nn.utils.prune as prune
 import torchvision.models as models
@@ -22,7 +23,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.quantization.mobilenet_v3_large(pretrained=True)
+model = models.quantization.mobilenet_v3_large(pretrained=True, bias = True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
