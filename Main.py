@@ -79,12 +79,18 @@ def main_worker(args, wandb):
     print("-----START-----", flush = True)
     print(f"Start time: {time.asctime()}", flush = True)  
 
-    print("Instantiating and setting Mobilenetv3", flush = True)
+    print("Instantiating and setting resnet50", flush = True)
     # Instantiate the model and modify the last layer to our specific case
-    model = models.quantization.mobilenet_v3_large(pretrained=True)
-    model.classifier[3] = nn.Sequential(
-        nn.Linear(in_features=1280, out_features=args.model_outputs, bias=True),
-        nn.Sigmoid())
+    #model = models.quantization.mobilenet_v3_large(pretrained=True)
+
+    #model.classifier[3] = nn.Sequential(
+    #    nn.Linear(in_features=1280, out_features=args.model_outputs, bias=True),
+    #    nn.Sigmoid())
+
+    model = models.quantization.resnet50(pretrained=True)
+    model.fc = nn.Sequential(   
+    nn.Linear(in_features=2048, out_features=1, bias=True),
+    nn.Sigmoid())    
 
     # Send the model to GPU
     print(f"Sending model to {hparams['device']}", flush = True)
@@ -170,7 +176,7 @@ def main_worker(args, wandb):
     print("Training end", flush = True)
 
     model_date = time.strftime("%Y%m%d-%H%M%S")
-    filename = "quant_model_%s.pt" % model_date
+    filename = "quant_resnet50_model_%s.pt" % model_date
     print("Saving model...", flush = True)
     torch.save(model.state_dict(), os.path.join("models", filename))
     print_size_of_model(model)
