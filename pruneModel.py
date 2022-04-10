@@ -1,4 +1,5 @@
 from audioop import bias
+import time
 import torch
 import torch.nn.utils.prune as prune
 import torchvision.models as models
@@ -23,7 +24,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.quantization.mobilenet_v3_large(pretrained=True, bias = True)
+model = models.quantization.mobilenet_v3_large(pretrained=True)
 model.classifier[3] = nn.Sequential(
     nn.Linear(in_features=1280, out_features = 1, bias=True),
     nn.Sigmoid())    
@@ -98,10 +99,17 @@ std_syn = np.std(timings)
 print("Size of model before Pruning")
 print_size_of_model(model)
 print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.') 
-print(model)
+
+model_date = time.strftime("%Y%m%d-%H%M%S")
+filename = "mobilenetv3_nonpruned_model_%s.pt" % model_date
+print("Saving model...", flush = True)
+torch.save(model.state_dict(), os.path.join("models/pruning", filename))
+print_size_of_model(model)
+print("Model saved", flush = True)
+
 parameters_to_prune = [
     (model.features[0][0], 'weight'),
-    (model.features[0][0], 'bias'),
+    #(model.features[0][0], 'bias'),
 
     (model.features[1].block[0][0], 'weight'),
     (model.features[1].block[1][0], 'weight'),
@@ -392,3 +400,10 @@ std_syn = np.std(timings)
 print("Size of model after Pruning")
 print_size_of_model(model)
 print(f'PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.')
+
+model_date = time.strftime("%Y%m%d-%H%M%S")
+filename = "mobilenetv3_pruned_model_%s.pt" % model_date
+print("Saving model...", flush = True)
+torch.save(model.state_dict(), os.path.join("models/pruning", filename))
+print_size_of_model(model)
+print("Model saved", flush = True)
