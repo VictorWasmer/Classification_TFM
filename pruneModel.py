@@ -97,7 +97,7 @@ std_syn = np.std(timings)
 print("Size of model before Pruning")
 print_size_of_model(model)
 print(f'NON-PRUNED MODEL: Inference time averaged with {repetitions} predictions = {mean_syn}ms with a {std_syn} deviation.') 
-
+print(model.features[0][0])
 parameters_to_prune = [
     (model.features[0][0], 'weight'),
     (model.features[0][0], 'bias'),
