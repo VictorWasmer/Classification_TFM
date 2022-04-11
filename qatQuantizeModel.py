@@ -66,11 +66,18 @@ wandb_id = wandb.util.generate_id()
 wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_params, resume=True, id  = wandb_id)
 
 #! LOAD PRE-TRAINED MODEL (NON-QUANTIZED)
-model = models.quantization.mobilenet_v3_large(pretrained=True)
-model.classifier[3] = nn.Sequential(
-    nn.Linear(in_features=1280, out_features = 1, bias=True),
-    nn.Sigmoid())    
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device)) #quant_model_20220327-161555.pt
+#model = models.quantization.mobilenet_v3_large(pretrained=True)
+#model.classifier[3] = nn.Sequential(
+#    nn.Linear(in_features=1280, out_features = 1, bias=True),
+#    nn.Sigmoid())    
+#model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device)) #quant_model_20220327-161555.pt
+
+model = models.quantization.resnet50(pretrained=True)
+model.fc = nn.Sequential(   
+nn.Linear(in_features=2048, out_features=1, bias=True),
+nn.Sigmoid()) 
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_resnet50_model_20220410-215305.pt", map_location=device)) #quant_model_20220327-161555.pt
+
 model.to(device) 
 
 #! EVENT SETUP
@@ -167,7 +174,7 @@ quantized_model.eval()
 
 #! SAVING QUANTIZED MODEL
 model_date = time.strftime("%Y%m%d-%H%M%S")
-filename = "qat_model_%s.pt" % model_date
+filename = "qat_resnet50_model_%s.pt" % model_date
 print(f"Saving model {filename}...", flush = True)
 torch.save(quantized_model.state_dict(), os.path.join("models", filename))
 print_size_of_model(quantized_model)
