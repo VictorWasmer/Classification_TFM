@@ -72,18 +72,18 @@ wandb.init(project="Classification_TFM", entity="viiiictorr", config=track_param
 #    nn.Sigmoid())    
 #model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/final_model_20220217-010634.pt", map_location=device)) #quant_model_20220327-161555.pt
 
-#model = models.quantization.resnet50(pretrained=True)
-#model.fc = nn.Sequential(   
-#nn.Linear(in_features=2048, out_features=1, bias=True),
-#nn.Sigmoid()) 
-#model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_resnet50_model_20220410-215305.pt", map_location=device)) #quant_model_20220327-161555.pt
-
-
-model = models.quantization.resnet18(pretrained=True)
+model = models.quantization.resnet50(pretrained=True)
 model.fc = nn.Sequential(   
-nn.Linear(in_features=512, out_features=1, bias=True),
-nn.Sigmoid())  
-model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_resnet18_model_20220410-215359.pt", map_location=device)) #quant_model_20220327-161555.pt
+nn.Linear(in_features=2048, out_features=1, bias=True),
+nn.Sigmoid()) 
+model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_resnet50_model_20220410-215305.pt", map_location=device)) #quant_model_20220327-161555.pt
+
+
+#model = models.quantization.resnet18(pretrained=True)
+#model.fc = nn.Sequential(   
+#nn.Linear(in_features=512, out_features=1, bias=True),
+#nn.Sigmoid())  
+#model.load_state_dict(torch.load("/mnt/gpid07/imatge/victor.wasmer/TFM/classificationRepo/Classification_TFM/models/quant_resnet18_model_20220410-215359.pt", map_location=device)) #quant_model_20220327-161555.pt
 
 
 model.to(device) 
